@@ -26,6 +26,13 @@ const STEPS = [
   },
 ];
 
+const HIGHLIGHTS = [
+  { icon: '⚡', label: 'Full-Stack Dev' },
+  { icon: '🎯', label: 'Hackathon Builder' },
+  { icon: '🖥️', label: 'System Admin' },
+  { icon: '✦', label: 'UI/UX Focused' },
+];
+
 export default function Home() {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -387,6 +394,236 @@ export default function Home() {
           </button>
         </div>
       </section>
+
+      {/* ── About the Developer ───────────────────────────── */}
+      {/* ── About the Developer ───────────────────────────── */}
+<section
+  style={{
+    background: 'linear-gradient(160deg, var(--c-cream) 0%, var(--c-paper) 100%)',
+    borderTop: '1px solid var(--c-divider)',
+  }}
+>
+  <div
+    className="page-container"
+    style={{ maxWidth: 1100, paddingTop: 80, paddingBottom: 80 }}
+  >
+    {/* Section label */}
+    <p
+      style={{
+        fontSize: '0.72rem',
+        fontWeight: 700,
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        color: 'var(--c-rust)',
+        marginBottom: 8,
+      }}
+    >
+      The Builder
+    </p>
+
+    <h2
+      className="serif"
+      style={{
+        fontSize: 'clamp(1.8rem, 3vw, 2.6rem)',
+        color: 'var(--c-ink)',
+        letterSpacing: '-0.02em',
+        marginBottom: 6,
+        lineHeight: 1.15,
+      }}
+    >
+      About the
+      <br />
+      <em style={{ color: 'var(--c-rust)', fontStyle: 'italic' }}>Developer</em>
+    </h2>
+
+    {/* Divider line */}
+    <div
+      style={{
+        width: 48,
+        height: 3,
+        borderRadius: 99,
+        background: 'var(--c-teal)',
+        margin: '20px 0 40px',
+      }}
+    />
+
+    {/* Responsive grid — stacks on mobile */}
+    <div className="about-dev-grid">
+
+      {/* Identity card — shown FIRST on mobile via order */}
+      <div className="animate-fade-up anim-delay-2 about-dev-card-col">
+        <div
+          style={{
+            background: 'white',
+            border: '1px solid var(--c-divider)',
+            borderRadius: 20,
+            boxShadow: 'var(--shadow-card)',
+            padding: '32px 28px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Decorative blob */}
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              top: -40,
+              right: -40,
+              width: 180,
+              height: 180,
+              borderRadius: '50%',
+              background: 'rgba(181,84,28,0.05)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          {/* Avatar + name row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--c-rust) 0%, var(--c-teal) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <span
+                className="serif"
+                style={{
+                  fontSize: '1.5rem',
+                  color: 'white',
+                  fontStyle: 'italic',
+                  lineHeight: 1,
+                  userSelect: 'none',
+                }}
+              >
+                S
+              </span>
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <h3
+                className="serif"
+                style={{
+                  fontSize: '1.2rem',
+                  color: 'var(--c-ink)',
+                  letterSpacing: '-0.01em',
+                  marginBottom: 2,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                SanjeeVijesh M
+              </h3>
+              <p
+                style={{
+                  fontSize: '0.72rem',
+                  color: 'var(--c-teal)',
+                  fontWeight: 600,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Full-Stack Developer & Builder
+              </p>
+            </div>
+          </div>
+
+          {/* Highlight chips — wrap naturally */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+            {HIGHLIGHTS.map(({ icon, label }) => (
+              <span
+                key={label}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 14px',
+                  borderRadius: 99,
+                  background: 'var(--c-cream)',
+                  border: '1px solid var(--c-divider)',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: 'var(--c-ink)',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                <span style={{ fontSize: '0.85rem' }}>{icon}</span>
+                {label}
+              </span>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'var(--c-divider)', marginBottom: 20 }} />
+
+          {/* Tagline */}
+          <p
+            style={{
+              fontSize: '0.82rem',
+              lineHeight: 1.65,
+              color: 'var(--c-muted)',
+              fontStyle: 'italic',
+            }}
+          >
+            "Creativity meets technical precision — building solutions that matter."
+          </p>
+        </div>
+      </div>
+
+      {/* Text content */}
+      <div className="animate-fade-up about-dev-text-col">
+        <p
+          style={{
+            fontSize: '0.95rem',
+            lineHeight: 1.8,
+            color: 'var(--c-muted)',
+            marginBottom: 16,
+          }}
+        >
+          NearbyRental is built and maintained by{' '}
+          <strong style={{ color: 'var(--c-ink)', fontWeight: 600 }}>SanjeeVijesh M</strong>  a
+          passionate technologist with a strong foundation in fullstack web development
+          and system administration.
+        </p>
+
+        <p
+          style={{
+            fontSize: '0.95rem',
+            lineHeight: 1.8,
+            color: 'var(--c-muted)',
+            marginBottom: 16,
+          }}
+        >
+          He specialises in building scalable, user-focused digital solutions from
+          modern web platforms to automation-driven systems with a keen eye for
+          clean UI/UX and performance optimisation. His portfolio spans hyperlocal
+          rental platforms, DevOps productivity tools, and national-level hackathon
+          projects tackling smart, sustainable real-world challenges.
+        </p>
+
+        <p
+          style={{
+            fontSize: '0.95rem',
+            lineHeight: 1.8,
+            color: 'var(--c-muted)',
+          }}
+        >
+          Committed to continuous learning and staying ahead of industry trends, he
+          aims to empower businesses and individuals through reliable, cost-effective,
+          and impactful technology.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
 
       {/* ── Footer ────────────────────────────────────────── */}
       <footer

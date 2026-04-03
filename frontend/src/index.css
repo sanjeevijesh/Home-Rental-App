@@ -288,3 +288,34 @@ body::before {
   background: rgba(181, 84, 28, 0.15);
   color: var(--c-rust-dk);
 }
+/* ── About Developer Section ──────────────────────────────── */
+.about-dev-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.about-dev-card-col {
+  order: 2;
+}
+
+.about-dev-text-col {
+  order: 1;
+}
+
+@media (max-width: 700px) {
+  .about-dev-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  /* Card comes after text on mobile */
+  .about-dev-card-col {
+    order: 2;
+  }
+
+  .about-dev-text-col {
+    order: 1;
+  }
+}
