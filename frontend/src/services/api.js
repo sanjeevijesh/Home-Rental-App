@@ -1,96 +1,155 @@
 // ============================================================
 // FILE: src/services/api.js
-// Axios instance with JWT interceptor for backend API calls
+// Clean Axios setup for NearbyRental (Production Ready)
 // ============================================================
 
-import axios from 'axios';
+import axios from "axios";
 
-// In dev, Vite proxies /api to localhost:5000 (see vite.config.js)
-// In production, set VITE_API_URL to your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+// 🌍 Base URL (from Vercel env)
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
+// 🔧 Axios instance
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
   timeout: 15000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-// ── Request interceptor: attach JWT ────────────────────────
+// ============================================================
+// 🔐 Request Interceptor (Attach JWT)
+// ============================================================
+
 api.interceptors.request.use(
   (config) => {
-    const session = localStorage.getItem('supabase_session');
+    const session = localStorage.getItem("supabase_session");
+
     if (session) {
       try {
         const parsed = JSON.parse(session);
+
         if (parsed?.access_token) {
           config.headers.Authorization = `Bearer ${parsed.access_token}`;
         }
       } catch {
-        // Invalid session in localStorage, ignore
+        console.warn("⚠️ Invalid session in localStorage");
       }
     }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor: handle auth errors ───────────────
+// ============================================================
+// ⚠️ Response Interceptor (Handle Auth Errors)
+// ============================================================
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid — clear session and redirect to login
-      localStorage.removeItem('supabase_session');
-      // Only redirect if not already on auth pages
-      if (!window.location.pathname.includes('/login') && 
-          !window.location.pathname.includes('/register')) {
-        window.location.href = '/login';
+      localStorage.removeItem("supabase_session");
+
+      if (
+        !window.location.pathname.includes("/login") &&
+        !window.location.pathname.includes("/register")
+      ) {
+        window.location.href = "/login";
       }
     }
+
     return Promise.reject(error);
   }
 );
 
-// ── API helper methods ─────────────────────────────────────
+// ============================================================
+// 📦 API SERVICES
+// ============================================================
 
+// 🔐 AUTH
 export const authAPI = {
-  register: (data) => api.post('/auth/register', data),
-  login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post("/auth/register", data),
+  login: (data) => api.post("/auth/login", data),
 };
 
+// 🏠 PROPERTIES (🔥 FIXED HERE)
 export const propertiesAPI = {
-  list: (params) => api.get('/properties', { params }),
-  getById: (id) => api.get(`/properties/${id}`),
-  getCount: (area) => api.get('/properties/count', { params: { area } }),
+  list: async (params) => {
+    const res = await api.get("/properties", { params });
+    return res.data?.properties || []; // ✅ FIXED
+  },
+
+  getById: async (id) => {
+    const res = await api.get(`/properties/${id}`);
+    return res.data;
+  },
+
+  getCount: async (area) => {
+    const res = await api.get("/properties/count", { params: { area } });
+    return res.data;
+  },
+
   create: (formData) =>
-    api.post('/properties', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    api.post("/properties", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     }),
+
   updateStatus: (id, status) =>
     api.patch(`/properties/${id}/status`, { status }),
 };
 
+// 🧭 SCOUTS
 export const scoutsAPI = {
   submitReport: (formData) =>
-    api.post('/scouts/report', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    api.post("/scouts/report", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     }),
-  getLeaderboard: () => api.get('/scouts/leaderboard'),
-  getMyReports: () => api.get('/scouts/my-reports'),
+
+  getLeaderboard: async () => {
+    const res = await api.get("/scouts/leaderboard");
+    return res.data;
+  },
+
+  getMyReports: async () => {
+    const res = await api.get("/scouts/my-reports");
+    return res.data;
+  },
 };
 
+// 👤 USERS
 export const usersAPI = {
-  getProfile: () => api.get('/users/profile'),
-  updatePreferences: (data) => api.post('/users/preferences', data),
-  updateProfile: (data) => api.patch('/users/profile', data),
+  getProfile: async () => {
+    const res = await api.get("/users/profile");
+    return res.data;
+  },
+
+  updatePreferences: (data) =>
+    api.post("/users/preferences", data),
+
+  updateProfile: (data) =>
+    api.patch("/users/profile", data),
 };
 
+// 🔔 NOTIFICATIONS
 export const notificationsAPI = {
-  getMyAlerts: ()      => api.get('/notifications/my-alerts'),
-  getUnreadCount: ()   => api.get('/notifications/unread-count'),
-  markRead: (id)       => api.patch(`/notifications/${id}/read`),
+  getMyAlerts: async () => {
+    const res = await api.get("/notifications/my-alerts");
+    return res.data;
+  },
+
+  getUnreadCount: async () => {
+    const res = await api.get("/notifications/unread-count");
+    return res.data;
+  },
+
+  markRead: (id) =>
+    api.patch(`/notifications/${id}/read`),
 };
+
+// ============================================================
+// 🚀 EXPORT
+// ============================================================
 
 export default api;
