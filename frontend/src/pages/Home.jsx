@@ -398,7 +398,7 @@ export default function Home() {
           letterSpacing: '0.03em',
         }}
       >
-        NearbyRental © {new Date().getFullYear()} — Crafted for Thoothukudi
+        NearbyRental © {new Date().getFullYear()} — Crafted for Thoothukudi by SanjeeVijesh
       </footer>
     </div>
   );
