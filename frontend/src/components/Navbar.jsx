@@ -47,13 +47,20 @@ export default function Navbar() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group" id="nav-logo">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: 'var(--c-rust)' }}
+               
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                  <polyline points="9,22 9,12 15,12 15,22" />
-                </svg>
+                <Link to="/" className="flex items-center gap-2 group" id="nav-logo">
+  <img
+    src="/logo.png"
+    alt="NearbyRental"
+    style={{
+      height: '36px',
+      width: 'auto',
+      objectFit: 'contain',
+      display: 'block',
+    }}
+  />
+</Link>
               </div>
               <div>
                 <span className="serif text-base font-normal" style={{ color: 'var(--c-ink)', letterSpacing: '-0.01em' }}>
