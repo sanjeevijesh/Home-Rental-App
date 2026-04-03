@@ -77,9 +77,21 @@ export const authAPI = {
 // 🏠 PROPERTIES (🔥 FIXED HERE)
 export const propertiesAPI = {
   list: async (params) => {
+  try {
     const res = await api.get("/properties", { params });
-    return res.data?.properties || []; // ✅ FIXED
-  },
+
+    // 🔥 extra safety
+    if (!res || !res.data) {
+      console.error("Invalid API response:", res);
+      return [];
+    }
+
+    return res.data.properties || [];
+  } catch (error) {
+    console.error("API Error:", error);
+    return []; // 🔥 prevents crash
+  }
+},
 
   getById: async (id) => {
     const res = await api.get(`/properties/${id}`);
