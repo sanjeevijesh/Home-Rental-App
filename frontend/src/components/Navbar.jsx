@@ -1,9 +1,5 @@
-// ============================================================
 // FILE: src/components/Navbar.jsx
-// Mobile-first navigation bar with responsive design
-// ============================================================
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -12,6 +8,13 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const isActive = (path) => location.pathname === path;
 
@@ -22,139 +25,155 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { path: '/', label: 'Home', icon: '🏠' },
-    { path: '/listings', label: 'Listings', icon: '📋' },
+    { path: '/', label: 'Home' },
+    { path: '/listings', label: 'Listings' },
   ];
 
-  // Role-specific links
   if (isAuthenticated && profile) {
-    if (profile.role === 'owner') {
-      navLinks.push({ path: '/post-property', label: 'Post', icon: '➕' });
-    }
-    if (profile.role === 'scout') {
-      navLinks.push({ path: '/scout-upload', label: 'Scout', icon: '📸' });
-    }
-    navLinks.push({ path: '/profile', label: 'Profile', icon: '👤' });
+    if (profile.role === 'owner')  navLinks.push({ path: '/post-property', label: 'Post' });
+    if (profile.role === 'scout')  navLinks.push({ path: '/scout-upload', label: 'Scout' });
+    navLinks.push({ path: '/profile', label: 'Profile' });
   }
 
   return (
-    <nav className="sticky top-0 z-50 glass-card border-b border-surface-200/50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group" id="nav-logo">
-            <div className="w-9 h-9 gradient-brand rounded-xl flex items-center justify-center
-                           shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 transition-shadow">
-              <span className="text-white text-lg">🏘</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base font-bold text-surface-900 leading-tight">
-                NearbyRental
-              </span>
-              <span className="text-[10px] text-surface-700/60 font-medium -mt-0.5 hidden sm:block">
-                Tuticorin
-              </span>
-            </div>
-          </Link>
+    <>
+      <nav
+        className="sticky top-0 z-50 nav-glass transition-shadow duration-300"
+        style={{ boxShadow: scrolled ? '0 2px 20px rgba(28,23,17,0.08)' : 'none' }}
+      >
+        <div className="max-w-screen-xl mx-auto px-5 sm:px-8">
+          <div className="flex items-center justify-between h-16">
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map(({ path, label, icon }) => (
-              <Link
-                key={path}
-                to={path}
-                id={`nav-${label.toLowerCase()}`}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
-                  ${isActive(path)
-                    ? 'bg-brand-50 text-brand-600'
-                    : 'text-surface-700 hover:bg-surface-100 hover:text-surface-900'
-                  }`}
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 group" id="nav-logo">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: 'var(--c-rust)' }}
               >
-                <span className="mr-1.5">{icon}</span>
-                {label}
-              </Link>
-            ))}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                  <polyline points="9,22 9,12 15,12 15,22" />
+                </svg>
+              </div>
+              <div>
+                <span className="serif text-base font-normal" style={{ color: 'var(--c-ink)', letterSpacing: '-0.01em' }}>
+                  NearbyRental
+                </span>
+                <span
+                  className="hidden sm:block text-[10px] font-medium tracking-widest uppercase"
+                  style={{ color: 'var(--c-muted)', marginTop: '-1px' }}
+                >
+                  Tuticorin
+                </span>
+              </div>
+            </Link>
 
-            {isAuthenticated ? (
-              <button
-                onClick={handleLogout}
-                id="nav-logout"
-                className="ml-2 px-4 py-2 rounded-xl text-sm font-medium
-                          text-red-600 hover:bg-red-50 transition-all duration-200"
-              >
-                Logout
-              </button>
-            ) : (
-              <Link
-                to="/login"
-                id="nav-login"
-                className="ml-2 btn-primary text-sm !py-2 !px-5"
-              >
-                Login
-              </Link>
-            )}
-          </div>
+            {/* Desktop nav */}
+            <div className="hidden md:flex items-center gap-1">
+              {navLinks.map(({ path, label }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  id={`nav-${label.toLowerCase()}`}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                  style={{
+                    color: isActive(path) ? 'var(--c-rust)' : 'var(--c-charcoal)',
+                    background: isActive(path) ? 'rgba(181,84,28,0.08)' : 'transparent',
+                  }}
+                  onMouseEnter={e => { if (!isActive(path)) e.currentTarget.style.background = 'var(--c-warm)'; }}
+                  onMouseLeave={e => { if (!isActive(path)) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {label}
+                </Link>
+              ))}
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            id="nav-mobile-menu-toggle"
-            className="md:hidden btn-icon hover:bg-surface-100"
-          >
-            <svg className="w-6 h-6 text-surface-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-        </div>
-      </div>
+              <div className="w-px h-5 mx-2" style={{ background: 'var(--c-divider)' }} />
 
-      {/* Mobile menu dropdown */}
-      {menuOpen && (
-        <div className="md:hidden animate-slide-down border-t border-surface-200/50 bg-white/95 backdrop-blur-lg">
-          <div className="px-4 py-3 space-y-1">
-            {navLinks.map(({ path, label, icon }) => (
-              <Link
-                key={path}
-                to={path}
-                onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
-                  ${isActive(path)
-                    ? 'bg-brand-50 text-brand-600'
-                    : 'text-surface-700 hover:bg-surface-100'
-                  }`}
-              >
-                <span className="text-lg">{icon}</span>
-                {label}
-              </Link>
-            ))}
-
-            <div className="pt-2 border-t border-surface-200">
               {isAuthenticated ? (
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium
-                            text-red-600 hover:bg-red-50 transition-all"
+                  id="nav-logout"
+                  className="btn-ghost text-sm"
+                  style={{ color: 'var(--c-muted)', fontSize: '0.85rem' }}
                 >
-                  <span className="text-lg">🚪</span>
-                  Logout
+                  Sign out
                 </button>
               ) : (
-                <Link
-                  to="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="block w-full text-center btn-primary text-sm !py-3"
-                >
-                  Login / Register
+                <Link to="/login" id="nav-login" className="btn-primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
+                  Sign in
                 </Link>
               )}
             </div>
+
+            {/* Mobile toggle */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              id="nav-mobile-menu-toggle"
+              className="md:hidden p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--c-charcoal)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--c-warm)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              aria-label="Toggle menu"
+            >
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                {menuOpen
+                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h16" />
+                }
+              </svg>
+            </button>
           </div>
         </div>
-      )}
-    </nav>
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div
+            className="md:hidden animate-fade-in"
+            style={{
+              borderTop: '1px solid var(--c-divider)',
+              background: 'rgba(250,247,242,0.98)',
+              backdropFilter: 'blur(20px)',
+            }}
+          >
+            <div className="px-5 py-4 space-y-1">
+              {navLinks.map(({ path, label }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all"
+                  style={{
+                    color: isActive(path) ? 'var(--c-rust)' : 'var(--c-charcoal)',
+                    background: isActive(path) ? 'rgba(181,84,28,0.08)' : 'transparent',
+                  }}
+                >
+                  {label}
+                </Link>
+              ))}
+              <div className="pt-3 mt-3" style={{ borderTop: '1px solid var(--c-divider)' }}>
+                {isAuthenticated ? (
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+                    style={{ color: 'var(--c-muted)' }}
+                  >
+                    Sign out
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="btn-primary w-full justify-center"
+                    style={{ width: '100%' }}
+                  >
+                    Sign in
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+    </>
   );
 }

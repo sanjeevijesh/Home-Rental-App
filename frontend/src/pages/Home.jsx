@@ -1,8 +1,4 @@
-// ============================================================
 // FILE: src/pages/Home.jsx
-// Landing page with area selector, budget slider, and search
-// ============================================================
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AreaSelector from '../components/AreaSelector';
@@ -12,6 +8,24 @@ import { useAuth } from '../hooks/useAuth';
 import { useRealtime } from '../hooks/useRealtime';
 import { propertiesAPI } from '../services/api';
 
+const STEPS = [
+  {
+    num: '01',
+    title: 'Scouts Spot',
+    desc: 'Local scouts photograph "To Let" boards across Tuticorin daily.',
+  },
+  {
+    num: '02',
+    title: 'Instant Upload',
+    desc: 'Listings go live within seconds — you get notified immediately.',
+  },
+  {
+    num: '03',
+    title: 'Direct Contact',
+    desc: 'Call or WhatsApp the owner directly. No brokerage. No delays.',
+  },
+];
+
 export default function Home() {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -19,17 +33,13 @@ export default function Home() {
   const [budget, setBudget] = useState({ min: 1000, max: 50000 });
   const [areaCount, setAreaCount] = useState(null);
   const [totalCount, setTotalCount] = useState(null);
-  const [loadingCount, setLoadingCount] = useState(false);
 
-  // Realtime subscription — show banner when new property matches prefs
   const { newProperty, clearNotification } = useRealtime({
     preferredAreas: profile?.preferred_areas || [],
   });
 
-  // Fetch listing counts
   useEffect(() => {
     const fetchCounts = async () => {
-      setLoadingCount(true);
       try {
         const [totalRes, areaRes] = await Promise.all([
           propertiesAPI.getCount(),
@@ -37,16 +47,11 @@ export default function Home() {
         ]);
         setTotalCount(totalRes.data.count);
         setAreaCount(selectedArea ? areaRes.data.count : null);
-      } catch {
-        // Non-critical — silently fail
-      } finally {
-        setLoadingCount(false);
-      }
+      } catch { /* non-critical */ }
     };
     fetchCounts();
   }, [selectedArea]);
 
-  // Navigate to listings with search params
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (selectedArea) params.set('area', selectedArea);
@@ -56,145 +61,344 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)]">
-      {/* Notification Banner */}
+    <div style={{ minHeight: 'calc(100vh - 4rem)' }}>
       <NotificationBanner property={newProperty} onDismiss={clearNotification} />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 gradient-brand opacity-[0.03]" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent-400/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+      {/* ── Hero ──────────────────────────────────────────── */}
+      <section
+        style={{
+          background: 'linear-gradient(160deg, var(--c-cream) 0%, var(--c-paper) 100%)',
+          borderBottom: '1px solid var(--c-divider)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Decorative arch */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            right: '-80px',
+            top: '-120px',
+            width: '500px',
+            height: '500px',
+            borderRadius: '50%',
+            border: '60px solid',
+            borderColor: 'rgba(181,84,28,0.06)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            left: '-60px',
+            bottom: '-100px',
+            width: '320px',
+            height: '320px',
+            borderRadius: '50%',
+            border: '40px solid',
+            borderColor: 'rgba(29,106,106,0.05)',
+            pointerEvents: 'none',
+          }}
+        />
 
-        <div className="relative page-container max-w-2xl mx-auto text-center pt-8 sm:pt-16 pb-6">
-          {/* Tagline chip */}
-          <div className="inline-flex items-center gap-2 bg-brand-50 text-brand-600 px-4 py-1.5 
-                        rounded-full text-xs font-semibold mb-6 animate-fade-in">
-            <span className="w-2 h-2 bg-accent-500 rounded-full animate-pulse-soft" />
-            Live in Thoothukudi
-          </div>
+        <div className="page-container" style={{ maxWidth: 1100, paddingTop: 72, paddingBottom: 80 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 48 }}>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-surface-900 leading-tight mb-4 animate-slide-up">
-            Find Houses in Tuticorin
-            <br />
-            <span className="text-gradient">Instantly</span>
-          </h1>
+            {/* Heading block */}
+            <div className="animate-fade-up" style={{ maxWidth: 560 }}>
+              {/* Live badge */}
+              <div
+                className="animate-fade-up"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: 'var(--c-teal-lt)',
+                  color: 'var(--c-teal)',
+                  padding: '5px 14px',
+                  borderRadius: 99,
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  marginBottom: 24,
+                }}
+              >
+                <span className="live-dot" style={{ background: 'var(--c-teal)', '--ring-color': 'var(--c-teal)' }} />
+                Live Updates · Thoothukudi
+              </div>
 
-          <p className="text-base sm:text-lg text-surface-700/70 max-w-md mx-auto mb-8 animate-slide-up">
-            Before anyone else. Community-driven listings updated in real-time by local scouts.
-          </p>
+              <h1
+                className="serif animate-fade-up anim-delay-1"
+                style={{
+                  fontSize: 'clamp(2.4rem, 5vw, 3.8rem)',
+                  lineHeight: 1.1,
+                  color: 'var(--c-ink)',
+                  marginBottom: 20,
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                Find your
+                <br />
+                <em style={{ color: 'var(--c-rust)', fontStyle: 'italic' }}>perfect home</em>
+                <br />
+                in Tuticorin
+              </h1>
 
-          {/* Stats row */}
-          <div className="flex items-center justify-center gap-6 mb-10 animate-fade-in">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-brand-600">
-                {totalCount !== null ? totalCount : '—'}
+              <p
+                className="animate-fade-up anim-delay-2"
+                style={{
+                  fontSize: '1rem',
+                  lineHeight: 1.7,
+                  color: 'var(--c-muted)',
+                  marginBottom: 40,
+                  maxWidth: 440,
+                }}
+              >
+                Community-driven listings updated in real-time by local scouts.
+                No middlemen. No brokerage. Direct to owner.
               </p>
-              <p className="text-xs text-surface-700/50 font-medium">Active Listings</p>
+
+              {/* Stats */}
+              <div
+                className="animate-fade-up anim-delay-3"
+                style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}
+              >
+                {[
+                  { value: totalCount !== null ? totalCount : '—', label: 'Active listings' },
+                  { value: '10', label: 'Areas covered' },
+                  { value: '24/7', label: 'Live updates' },
+                ].map(({ value, label }) => (
+                  <div key={label}>
+                    <div
+                      className="serif"
+                      style={{
+                        fontSize: '2rem',
+                        fontWeight: 400,
+                        color: 'var(--c-ink)',
+                        lineHeight: 1,
+                        marginBottom: 2,
+                      }}
+                    >
+                      {value}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--c-muted)' }}>
+                      {label}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="w-px h-10 bg-surface-200" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-accent-600">10</p>
-              <p className="text-xs text-surface-700/50 font-medium">Areas Covered</p>
-            </div>
-            <div className="w-px h-10 bg-surface-200" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">24/7</p>
-              <p className="text-xs text-surface-700/50 font-medium">Live Updates</p>
+
+            {/* Search card */}
+            <div
+              className="card animate-fade-up anim-delay-2"
+              id="search-card"
+              style={{ padding: '32px', maxWidth: 480 }}
+            >
+              <h2
+                className="serif"
+                style={{ fontSize: '1.4rem', color: 'var(--c-ink)', marginBottom: 24, letterSpacing: '-0.01em' }}
+              >
+                Where are you looking?
+              </h2>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div>
+                  <label className="field-label">Area</label>
+                  <AreaSelector
+                    value={selectedArea}
+                    onChange={setSelectedArea}
+                    placeholder="Select an area in Tuticorin"
+                    id="home-area-selector"
+                  />
+                  {selectedArea && areaCount !== null && (
+                    <p
+                      className="animate-fade-in"
+                      style={{ marginTop: 6, fontSize: '0.78rem', color: 'var(--c-teal)', fontWeight: 500 }}
+                    >
+                      {areaCount} listings available in {selectedArea}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="field-label">Monthly Budget</label>
+                  <BudgetSlider
+                    minValue={budget.min}
+                    maxValue={budget.max}
+                    onChange={setBudget}
+                    id="home-budget-slider"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSearch}
+                  className="btn-primary"
+                  id="home-search-btn"
+                  style={{ width: '100%', padding: '14px', fontSize: '0.95rem', marginTop: 4 }}
+                >
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path strokeLinecap="round" d="M21 21l-4.35-4.35" />
+                  </svg>
+                  Search Properties
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Search Card */}
-      <section className="page-container -mt-2 max-w-lg mx-auto">
-        <div className="card p-6 sm:p-8 space-y-6 animate-scale-in" id="search-card">
-          {/* Area Selector */}
-          <AreaSelector
-            value={selectedArea}
-            onChange={setSelectedArea}
-            label="Where are you looking?"
-            placeholder="Select an area in Tuticorin"
-            id="home-area-selector"
-          />
-
-          {/* Count indicator */}
-          {selectedArea && areaCount !== null && (
-            <div className="flex items-center gap-2 text-sm animate-fade-in">
-              <span className="w-2 h-2 bg-accent-500 rounded-full" />
-              <span className="text-surface-700/70">
-                <strong className="text-surface-900">{areaCount}</strong> listings in {selectedArea}
-              </span>
-            </div>
-          )}
-
-          {/* Budget Slider */}
-          <BudgetSlider
-            minValue={budget.min}
-            maxValue={budget.max}
-            onChange={setBudget}
-            label="Your budget"
-            id="home-budget-slider"
-          />
-
-          {/* Search Button */}
+      {/* ── How it works ──────────────────────────────────── */}
+      <section className="page-container" style={{ maxWidth: 1100, paddingTop: 80, paddingBottom: 80 }}>
+        <div style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--c-rust)', marginBottom: 8 }}>
+              The Process
+            </p>
+            <h2 className="serif" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', color: 'var(--c-ink)', letterSpacing: '-0.02em' }}>
+              How it works
+            </h2>
+          </div>
           <button
-            onClick={handleSearch}
-            className="w-full btn-primary text-base py-4 flex items-center justify-center gap-2"
-            id="home-search-btn"
+            onClick={() => navigate('/listings')}
+            className="btn-secondary"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Find Houses
+            Browse all listings
           </button>
         </div>
-      </section>
 
-      {/* How it works */}
-      <section className="page-container max-w-3xl mx-auto py-12">
-        <h2 className="text-xl font-bold text-center text-surface-900 mb-8">
-          How it works
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {[
-            {
-              icon: '📸',
-              title: 'Scouts Spot',
-              desc: 'Local scouts photograph "To Let" boards across Tuticorin',
-            },
-            {
-              icon: '⚡',
-              title: 'Instant Upload',
-              desc: 'Listings go live in seconds — you get notified immediately',
-            },
-            {
-              icon: '📞',
-              title: 'Direct Contact',
-              desc: 'Call or WhatsApp the owner directly — no middlemen',
-            },
-          ].map((step, i) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+          {STEPS.map((step, i) => (
             <div
-              key={i}
-              className="text-center p-6 rounded-2xl bg-surface-50 hover:bg-white hover:shadow-md
-                       transition-all duration-300 group"
+              key={step.num}
+              className="animate-fade-up"
+              style={{
+                animationDelay: `${i * 0.12}s`,
+                padding: '32px',
+                borderRadius: 16,
+                background: i === 0 ? 'var(--c-rust)' : 'white',
+                border: '1px solid var(--c-divider)',
+                boxShadow: i === 0 ? '0 8px 40px rgba(181,84,28,0.25)' : 'var(--shadow-card)',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
             >
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-brand-50 flex items-center justify-center
-                           text-2xl group-hover:scale-110 transition-transform duration-300">
-                {step.icon}
+              {i === 0 && (
+                <div
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    bottom: -40,
+                    right: -40,
+                    width: 160,
+                    height: 160,
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.08)',
+                  }}
+                />
+              )}
+              <div
+                className="serif"
+                style={{
+                  fontSize: '3rem',
+                  fontWeight: 400,
+                  lineHeight: 1,
+                  color: i === 0 ? 'rgba(255,255,255,0.25)' : 'var(--c-warm)',
+                  marginBottom: 20,
+                  fontStyle: 'italic',
+                }}
+              >
+                {step.num}
               </div>
-              <h3 className="font-bold text-surface-900 mb-1">{step.title}</h3>
-              <p className="text-sm text-surface-700/60">{step.desc}</p>
+              <h3
+                style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: i === 0 ? 'white' : 'var(--c-ink)',
+                  marginBottom: 10,
+                }}
+              >
+                {step.title}
+              </h3>
+              <p
+                style={{
+                  fontSize: '0.875rem',
+                  lineHeight: 1.65,
+                  color: i === 0 ? 'rgba(255,255,255,0.75)' : 'var(--c-muted)',
+                }}
+              >
+                {step.desc}
+              </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="text-center py-8 text-xs text-surface-700/40">
-        <p>NearbyRental © {new Date().getFullYear()} — Made for Thoothukudi 🏘</p>
+      {/* ── CTA Banner ────────────────────────────────────── */}
+      <section
+        style={{
+          background: 'var(--c-paper)',
+          borderTop: '1px solid var(--c-divider)',
+          borderBottom: '1px solid var(--c-divider)',
+        }}
+      >
+        <div
+          className="page-container"
+          style={{
+            maxWidth: 1100,
+            paddingTop: 60,
+            paddingBottom: 60,
+            textAlign: 'center',
+          }}
+        >
+          <p
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--c-muted)',
+              marginBottom: 12,
+            }}
+          >
+            Get started today
+          </p>
+          <h2
+            className="serif"
+            style={{
+              fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',
+              color: 'var(--c-ink)',
+              marginBottom: 24,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Ready to find your next home?
+          </h2>
+          <button
+            onClick={() => navigate('/listings')}
+            className="btn-primary"
+            style={{ padding: '14px 32px', fontSize: '0.95rem' }}
+          >
+            Explore all listings
+          </button>
+        </div>
+      </section>
+
+      {/* ── Footer ────────────────────────────────────────── */}
+      <footer
+        style={{
+          textAlign: 'center',
+          padding: '28px 20px',
+          fontSize: '0.75rem',
+          color: 'var(--c-sand)',
+          letterSpacing: '0.03em',
+        }}
+      >
+        NearbyRental © {new Date().getFullYear()} — Crafted for Thoothukudi
       </footer>
     </div>
   );

@@ -1,25 +1,16 @@
-// ============================================================
 // FILE: src/components/NotificationBanner.jsx
-// Animated notification banner for real-time alerts
-// ============================================================
-
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-/**
- * Toast/banner that slides down when a new property is detected.
- * Auto-dismisses after 8 seconds.
- */
 export default function NotificationBanner({ property, onDismiss }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (property) {
       setVisible(true);
-      // Auto-dismiss after 8 seconds
       const timer = setTimeout(() => {
         setVisible(false);
-        setTimeout(() => onDismiss?.(), 300); // Wait for exit animation
+        setTimeout(() => onDismiss?.(), 400);
       }, 8000);
       return () => clearTimeout(timer);
     }
@@ -27,55 +18,109 @@ export default function NotificationBanner({ property, onDismiss }) {
 
   if (!property) return null;
 
-  const formatRent = (rent) => `₹${Number(rent).toLocaleString('en-IN')}`;
+  const formatRent = (r) => `₹${Number(r).toLocaleString('en-IN')}`;
 
   return (
     <div
-      className={`fixed top-20 left-4 right-4 z-50 max-w-lg mx-auto transition-all duration-500
-        ${visible ? 'animate-slide-down opacity-100' : 'opacity-0 -translate-y-4 pointer-events-none'}`}
       id="notification-banner"
+      style={{
+        position: 'fixed',
+        top: 76,
+        left: 16,
+        right: 16,
+        maxWidth: 420,
+        margin: '0 auto',
+        zIndex: 50,
+        transition: 'all 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+        transform: visible ? 'translateY(0)' : 'translateY(-20px)',
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
+      }}
     >
-      <div className="glass-card rounded-2xl p-4 shadow-2xl border border-brand-200/50">
-        <div className="flex items-start gap-3">
-          {/* Icon */}
-          <div className="w-10 h-10 gradient-brand rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-brand-500/30">
-            <span className="text-lg">🏠</span>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-surface-900">
-              New listing in {property.area}!
-            </p>
-            <p className="text-xs text-surface-700/70 mt-0.5">
-              {property.type || 'Property'} for {formatRent(property.rent)} just posted
-            </p>
-            <Link
-              to={`/property/${property.id}`}
-              onClick={() => {
-                setVisible(false);
-                onDismiss?.();
-              }}
-              className="inline-block mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700"
-            >
-              View Details →
-            </Link>
-          </div>
-
-          {/* Close button */}
-          <button
-            onClick={() => {
-              setVisible(false);
-              setTimeout(() => onDismiss?.(), 300);
-            }}
-            className="flex-shrink-0 p-1 hover:bg-surface-100 rounded-lg transition-colors"
-            id="notification-dismiss"
-          >
-            <svg className="w-4 h-4 text-surface-700/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      <div
+        style={{
+          background: 'white',
+          border: '1px solid var(--c-divider)',
+          borderRadius: 14,
+          padding: '14px 16px',
+          boxShadow: '0 12px 40px rgba(28,23,17,0.14)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 12,
+        }}
+      >
+        {/* Icon */}
+        <div
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 10,
+            background: 'var(--c-rust)',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2.2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            <polyline points="9,22 9,12 15,12 15,22" />
+          </svg>
         </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--c-ink)', marginBottom: 2 }}>
+            New listing in {property.area}
+          </p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--c-muted)', marginBottom: 8 }}>
+            {property.type || 'Property'} · {formatRent(property.rent)}/mo just posted
+          </p>
+          <Link
+            to={`/property/${property.id}`}
+            onClick={() => { setVisible(false); onDismiss?.(); }}
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              color: 'var(--c-rust)',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            View listing
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+
+        {/* Close */}
+        <button
+          id="notification-dismiss"
+          onClick={() => { setVisible(false); setTimeout(() => onDismiss?.(), 400); }}
+          style={{
+            flexShrink: 0,
+            width: 26,
+            height: 26,
+            borderRadius: 6,
+            border: 'none',
+            background: 'var(--c-paper)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--c-muted)',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--c-warm)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'var(--c-paper)'}
+        >
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
     </div>
   );

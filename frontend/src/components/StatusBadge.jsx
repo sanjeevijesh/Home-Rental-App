@@ -1,40 +1,44 @@
-// ============================================================
 // FILE: src/components/StatusBadge.jsx
-// Colored status badge for property cards
-// ============================================================
-
-/**
- * Status badge with color coding:
- * - green = available
- * - red = occupied
- * - yellow = new (posted < 24 hours ago)
- */
 export default function StatusBadge({ status, createdAt }) {
-  // Check if the property was posted within the last 24 hours
   const isNew = createdAt && (Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000);
 
-  let colorClasses, label, dotColor;
+  let bg, color, dot, label;
 
   if (isNew && status === 'available') {
-    colorClasses = 'bg-amber-50 text-amber-700 border-amber-200';
-    dotColor = 'bg-amber-500';
-    label = '🆕 New';
+    bg = 'rgba(217,119,6,0.12)'; color = '#b45309'; dot = '#d97706'; label = 'New';
   } else if (status === 'available') {
-    colorClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    dotColor = 'bg-emerald-500';
-    label = 'Available';
+    bg = 'rgba(22,163,74,0.1)'; color = '#15803d'; dot = '#16a34a'; label = 'Available';
   } else {
-    colorClasses = 'bg-red-50 text-red-700 border-red-200';
-    dotColor = 'bg-red-500';
-    label = 'Occupied';
+    bg = 'rgba(220,38,38,0.1)'; color = '#b91c1c'; dot = '#dc2626'; label = 'Occupied';
   }
 
   return (
     <span
-      className={`chip border ${colorClasses} gap-1.5`}
       id={`status-badge-${status}`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        background: bg,
+        color,
+        padding: '3px 9px',
+        borderRadius: 99,
+        fontSize: '0.68rem',
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        backdropFilter: 'blur(8px)',
+      }}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isNew ? 'animate-pulse-soft' : ''}`} />
+      <span
+        style={{
+          width: 5,
+          height: 5,
+          borderRadius: '50%',
+          background: dot,
+          flexShrink: 0,
+          animation: isNew && status === 'available' ? 'pulse 1.5s ease infinite' : 'none',
+        }}
+      />
       {label}
     </span>
   );
