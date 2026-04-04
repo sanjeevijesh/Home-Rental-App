@@ -30,8 +30,9 @@ export default function Navbar() {
   ];
 
   if (isAuthenticated && profile) {
-    if (profile.role === 'owner')  navLinks.push({ path: '/post-property', label: 'Post' });
-    if (profile.role === 'scout')  navLinks.push({ path: '/scout-upload', label: 'Scout' });
+    if (profile.role === 'owner')       navLinks.push({ path: '/post-property', label: 'Post' });
+    if (profile.role === 'scout')       navLinks.push({ path: '/scout-upload', label: 'Scout' });
+    if (profile.role === 'super_admin') navLinks.push({ path: '/admin', label: '⚙ Admin' }); // ← ADDED
     navLinks.push({ path: '/profile', label: 'Profile' });
   }
 
@@ -46,21 +47,19 @@ export default function Navbar() {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group" id="nav-logo">
-              <div
-               
-              >
+              <div>
                 <Link to="/" className="flex items-center gap-2 group" id="nav-logo">
-  <img
-    src="/logo.png"
-    alt="NearbyRental"
-    style={{
-      height: '36px',
-      width: 'auto',
-      objectFit: 'contain',
-      display: 'block',
-    }}
-  />
-</Link>
+                  <img
+                    src="/logo.png"
+                    alt="NearbyRental"
+                    style={{
+                      height: '36px',
+                      width: 'auto',
+                      objectFit: 'contain',
+                      display: 'block',
+                    }}
+                  />
+                </Link>
               </div>
               <div>
                 <span className="serif text-base font-normal" style={{ color: 'var(--c-ink)', letterSpacing: '-0.01em' }}>

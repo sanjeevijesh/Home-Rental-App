@@ -1,6 +1,6 @@
 // ============================================================
-// FILE: src/middleware/auth.js
-// JWT authentication middleware using Supabase
+// FILE: src/middleware/auth.js  (updated)
+// JWT authentication middleware — adds super_admin support
 // ============================================================
 
 const { supabase } = require("../services/supabase");
@@ -22,25 +22,17 @@ async function requireAuth(req, res, next) {
   const token = authHeader.split(" ")[1];
 
   try {
-    // Verify the JWT with Supabase
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return res.status(401).json({
-        error: "Invalid or expired token",
-        details: error?.message,
-      });
+      return res.status(401).json({ error: "Invalid or expired token", details: error?.message });
     }
 
-    // Attach user info to the request object
-    req.user = user;
+    req.user  = user;
     req.token = token;
     next();
   } catch (err) {
-    return res.status(401).json({
-      error: "Token verification failed",
-      details: err.message,
-    });
+    return res.status(401).json({ error: "Token verification failed", details: err.message });
   }
 }
 
@@ -70,6 +62,7 @@ async function optionalAuth(req, res, next) {
 
 /**
  * Role-based authorization middleware factory.
+ * super_admin always passes (can do anything).
  * Usage: requireRole('owner') or requireRole('scout', 'owner')
  */
 function requireRole(...roles) {
@@ -80,15 +73,25 @@ function requireRole(...roles) {
 
     const { supabaseAdmin } = require("../services/supabase");
 
-    // Fetch the user's profile to check their role
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("role")
+      .select("role, suspended")
       .eq("id", req.user.id)
       .single();
 
     if (error || !profile) {
       return res.status(403).json({ error: "Profile not found" });
+    }
+
+    // Suspended users cannot do anything
+    if (profile.suspended) {
+      return res.status(403).json({ error: "Account suspended. Contact support." });
+    }
+
+    // super_admin can do everything — bypass role checks
+    if (profile.role === "super_admin") {
+      req.userRole = "super_admin";
+      return next();
     }
 
     if (!roles.includes(profile.role)) {

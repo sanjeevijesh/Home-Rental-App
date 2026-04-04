@@ -6,7 +6,7 @@ import BudgetSlider from '../components/BudgetSlider';
 import { useAuth } from '../hooks/useAuth';
 import { usersAPI, scoutsAPI } from '../services/api';
 
-const ROLE_LABELS = { tenant: 'Tenant', owner: 'Property Owner', scout: 'Scout' };
+const ROLE_LABELS = { tenant: 'Tenant', owner: 'Property Owner', scout: 'Scout', super_admin: 'Super Admin' }; // ← ADDED super_admin
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -236,6 +236,28 @@ export default function Profile() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Super Admin: Dashboard shortcut ── */}
+      {profile?.role === 'super_admin' && (
+        <button
+          onClick={() => navigate('/admin')}
+          style={{
+            width: '100%', padding: '13px', marginBottom: 12,
+            borderRadius: 10, border: '1.5px solid rgba(181,84,28,0.3)',
+            background: 'rgba(181,84,28,0.06)', color: 'var(--c-rust)',
+            fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+            transition: 'background 0.15s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(181,84,28,0.12)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(181,84,28,0.06)'}
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          Admin Dashboard
+        </button>
       )}
 
       {/* Logout */}
