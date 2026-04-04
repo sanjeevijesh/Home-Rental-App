@@ -281,3 +281,98 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
+
+-- ────────────────────────────────────────────────────────────
+-- 10. OWNER ANALYTICS TABLES
+-- ────────────────────────────────────────────────────────────
+
+-- ── PROPERTY_VIEWS table ────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.property_views (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id     uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
+  viewer_ip_hash  text, -- Anonymized IP hash
+  viewed_at       timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_property_views_property ON public.property_views (property_id);
+COMMENT ON TABLE public.property_views IS 'Analytics: Page views for properties';
+
+-- ── CONTACT_TAPS table ──────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.contact_taps (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
+  action      text NOT NULL CHECK (action IN ('call', 'whatsapp')),
+  tapped_at   timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contact_taps_property ON public.contact_taps (property_id);
+COMMENT ON TABLE public.contact_taps IS 'Analytics: CTA clicks for properties';
+
+-- ── RLS for Analytics ───────────────────────────────────────
+ALTER TABLE public.property_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_taps   ENABLE ROW LEVEL SECURITY;
+
+-- Note: Inserting into views and taps happens via backend (bypassing RLS)
+-- Owners can read views and taps for their own properties
+CREATE POLICY "property_views_select_owner"
+  ON public.property_views FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.properties
+      WHERE id = property_views.property_id
+      AND owner_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "contact_taps_select_owner"
+  ON public.contact_taps FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.properties
+      WHERE id = contact_taps.property_id
+      AND owner_id = auth.uid()
+    )
+  );
+
+-- ────────────────────────────────────────────────────────────
+-- 11. OWNER DASHBOARD ENHANCEMENTS
+-- Run in Supabase SQL Editor if not already present
+-- ────────────────────────────────────────────────────────────
+
+-- Admin logs (owner issue reports, promote requests)
+CREATE TABLE IF NOT EXISTS public.admin_logs (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id    uuid        REFERENCES public.profiles(id) ON DELETE SET NULL,
+  action      text        NOT NULL,
+  target_type text,
+  target_id   uuid,
+  meta        jsonb       DEFAULT '{}',
+  created_at  timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON public.admin_logs (action);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_admin  ON public.admin_logs (admin_id);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_target ON public.admin_logs (target_type, target_id);
+
+-- Safety-net: ensure notification columns exist for older installs
+ALTER TABLE public.alerts ADD COLUMN IF NOT EXISTS title text;
+ALTER TABLE public.alerts ADD COLUMN IF NOT EXISTS body  text;
+ALTER TABLE public.alerts ADD COLUMN IF NOT EXISTS read  boolean NOT NULL DEFAULT false;
+
+-- Fast unread count index (owner bell badge)
+CREATE INDEX IF NOT EXISTS idx_alerts_unread
+  ON public.alerts (user_id, read) WHERE read = false;
+
+-- Advertisements table (admin activates after owner promote request)
+CREATE TABLE IF NOT EXISTS public.advertisements (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id uuid        NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
+  active      boolean     NOT NULL DEFAULT false,
+  frequency   text        NOT NULL DEFAULT 'always'
+               CHECK (frequency IN ('always','once','interval')),
+  starts_at   timestamptz NOT NULL DEFAULT now(),
+  ends_at     timestamptz,
+  created_by  uuid        REFERENCES public.profiles(id) ON DELETE SET NULL,
+  created_at  timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_ads_active ON public.advertisements (active);
+CREATE INDEX IF NOT EXISTS idx_ads_propid ON public.advertisements (property_id);

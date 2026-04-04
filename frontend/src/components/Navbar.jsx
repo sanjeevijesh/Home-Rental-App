@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import Icon from './Icons';
 
 export default function Navbar() {
   const { isAuthenticated, profile, logout } = useAuth();
@@ -30,9 +31,12 @@ export default function Navbar() {
   ];
 
   if (isAuthenticated && profile) {
-    if (profile.role === 'owner')       navLinks.push({ path: '/post-property', label: 'Post' });
+    if (profile.role === 'owner') {
+      navLinks.push({ path: '/post-property', label: 'Post' });
+      navLinks.push({ path: '/my-properties', label: 'Dashboard' });
+    }
     if (profile.role === 'scout')       navLinks.push({ path: '/scout-upload', label: 'Scout' });
-    if (profile.role === 'super_admin') navLinks.push({ path: '/admin', label: '⚙ Admin' }); // ← ADDED
+    if (profile.role === 'super_admin') navLinks.push({ path: '/admin', label: 'Admin' });
     navLinks.push({ path: '/profile', label: 'Profile' });
   }
 
@@ -102,7 +106,7 @@ export default function Navbar() {
                   className="btn-ghost text-sm"
                   style={{ color: 'var(--c-muted)', fontSize: '0.85rem' }}
                 >
-                  Sign out
+                  <Icon.LogOut size={14} color="var(--c-muted)" /> Sign out
                 </button>
               ) : (
                 <Link to="/login" id="nav-login" className="btn-primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
@@ -163,7 +167,7 @@ export default function Navbar() {
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all"
                     style={{ color: 'var(--c-muted)' }}
                   >
-                    Sign out
+                    <Icon.LogOut size={14} color="var(--c-muted)" /> Sign out
                   </button>
                 ) : (
                   <Link

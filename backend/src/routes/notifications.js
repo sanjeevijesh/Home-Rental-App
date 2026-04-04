@@ -74,4 +74,19 @@ router.get("/unread-count", requireAuth, async (req, res) => {
   return res.json({ unread: count || 0 });
 });
 
+/**
+ * PATCH /api/notifications/mark-all-read
+ * Mark all of current user's notifications as read
+ */
+router.patch("/mark-all-read", requireAuth, async (req, res) => {
+  const { error } = await supabaseAdmin
+    .from("alerts")
+    .update({ read: true })
+    .eq("user_id", req.user.id)
+    .eq("read", false);
+
+  if (error) return res.status(500).json({ error: "Failed to mark all as read" });
+  return res.json({ message: "All notifications marked as read" });
+});
+
 module.exports = router;

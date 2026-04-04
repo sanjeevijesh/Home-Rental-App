@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import AreaSelector from '../components/AreaSelector';
 import BudgetSlider from '../components/BudgetSlider';
 import NotificationBanner from '../components/NotificationBanner';
+import Icon from '../components/Icons';
 import { useAuth } from '../hooks/useAuth';
 import { useRealtime } from '../hooks/useRealtime';
 import { propertiesAPI } from '../services/api';
@@ -27,10 +28,10 @@ const STEPS = [
 ];
 
 const HIGHLIGHTS = [
-  { icon: '⚡', label: 'Full-Stack Dev' },
-  { icon: '🎯', label: 'Hackathon Builder' },
-  { icon: '🖥️', label: 'System Admin' },
-  { icon: '✦', label: 'UI/UX Focused' },
+  { icon: <Icon.Zap    size={14} color="var(--c-rust)" />, label: 'Full-Stack Dev' },
+  { icon: <Icon.Target size={14} color="var(--c-rust)" />, label: 'Hackathon Builder' },
+  { icon: <Icon.Cpu   size={14} color="var(--c-rust)" />, label: 'System Admin' },
+  { icon: <Icon.Layers size={14} color="var(--c-rust)" />, label: 'UI/UX Focused' },
 ];
 
 export default function Home() {

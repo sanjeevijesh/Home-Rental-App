@@ -11,6 +11,7 @@ import ScoutUpload from './pages/ScoutUpload';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import SuperAdmin from './pages/SuperAdmin';          // ← NEW
+import MyProperties from './pages/MyProperties';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/listings"       element={<Listings />} />
             <Route path="/property/:id"   element={<PropertyDetail />} />
             <Route path="/post-property"  element={<PostProperty />} />
+            <Route path="/my-properties"  element={<MyProperties />} />
             <Route path="/scout-upload"   element={<ScoutUpload />} />
             <Route path="/profile"        element={<Profile />} />
             <Route path="/login"          element={<Login />} />

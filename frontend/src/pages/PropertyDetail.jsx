@@ -34,7 +34,11 @@ export default function PropertyDetail() {
 
   useEffect(() => {
     propertiesAPI.getById(id)
-      .then(({ data }) => setProperty(data.property))
+      .then(({ data }) => {
+        setProperty(data.property);
+        // Record view asynchronously
+        propertiesAPI.recordView(id).catch(() => {});
+      })
       .catch(err => setError(err.response?.data?.error || 'Property not found'))
       .finally(() => setLoading(false));
   }, [id]);
@@ -235,6 +239,7 @@ export default function PropertyDetail() {
         >
           <a
             href={callLink}
+            onClick={() => propertiesAPI.recordTap(id, 'call').catch(() => {})}
             id="detail-call-btn"
             className="btn-primary"
             style={{ flex: 1, textDecoration: 'none', justifyContent: 'center', padding: '14px' }}
@@ -246,6 +251,7 @@ export default function PropertyDetail() {
           </a>
           <a
             href={whatsappLink}
+            onClick={() => propertiesAPI.recordTap(id, 'whatsapp').catch(() => {})}
             target="_blank"
             rel="noopener noreferrer"
             id="detail-whatsapp-btn"

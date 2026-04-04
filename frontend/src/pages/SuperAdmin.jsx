@@ -366,6 +366,14 @@ function PropertiesTab() {
     } finally { setActionId(null); }
   };
 
+  const handleUnflag = async (id) => {
+    setActionId(id);
+    try {
+      await adminAPI.updateProperty(id, { status: 'available' });
+      setProperties(prev => prev.map(p => p.id === id ? { ...p, status: 'available' } : p));
+    } finally { setActionId(null); }
+  };
+
   const handleEdit = async (id, updates) => {
     try {
       await adminAPI.updateProperty(id, updates);
@@ -433,9 +441,11 @@ function PropertiesTab() {
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <Btn variant="outline" size="xs" onClick={() => setEditModal(p)}>Edit</Btn>
                   <Btn variant="outline" size="xs" onClick={() => handleSetAd(p)} title="Set as popup ad" style={{ color: C.rust }}>📢 Ad</Btn>
-                  {p.status !== 'flagged' && p.status !== 'deleted' && (
+                  {p.status === 'flagged' ? (
+                    <Btn variant="outline" size="xs" disabled={actionId === p.id} onClick={() => handleUnflag(p.id)} style={{ color: C.green }}>Unflag</Btn>
+                  ) : p.status !== 'deleted' ? (
                     <Btn variant="outline" size="xs" disabled={actionId === p.id} onClick={() => handleFlag(p.id)} style={{ color: C.amber }}>Flag</Btn>
-                  )}
+                  ) : null}
                   {p.status !== 'deleted' && (
                     <Btn variant="danger" size="xs" disabled={actionId === p.id}
                       onClick={() => setConfirmModal({ type: 'delete', property: p })}>

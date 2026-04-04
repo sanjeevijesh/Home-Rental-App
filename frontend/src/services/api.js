@@ -57,6 +57,14 @@ export const propertiesAPI = {
   getCount:     (area)     => api.get('/properties/count', { params: { area } }),
   create:       (formData) => api.post('/properties', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   updateStatus: (id, status) => api.patch(`/properties/${id}/status`, { status }),
+  getMine:      ()         => api.get('/properties/mine'),
+  recordView:   (id)       => api.post(`/properties/${id}/view`),
+  recordTap:    (id, action) => api.post(`/properties/${id}/tap`, { action }),
+  delete:       (id)       => api.delete(`/properties/${id}`),
+  promote:      (id, plan) => api.post(`/properties/${id}/promote`, { plan }),
+  getAreaDemand:(area)     => api.get(`/properties/area-demand/${encodeURIComponent(area)}`),
+  getTrustScore:()         => api.get('/properties/owner/trust-score'),
+  submitIssue:  (data)     => api.post('/properties/owner/issue', data),
 };
 
 export const scoutsAPI = {
@@ -75,6 +83,7 @@ export const notificationsAPI = {
   getMyAlerts:    () => api.get('/notifications/my-alerts'),
   getUnreadCount: () => api.get('/notifications/unread-count'),
   markRead:       (id) => api.patch(`/notifications/${id}/read`),
+  markAllRead:    () => api.patch('/notifications/mark-all-read'),
 };
 
 // ── Admin API (super_admin only) ───────────────────────────
