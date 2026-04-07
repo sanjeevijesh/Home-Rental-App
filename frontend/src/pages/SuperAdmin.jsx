@@ -5,84 +5,174 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { adminAPI } from '../services/api';
 
-// ── Palette (matches the site's CSS variables) ────────────
+/* ─── GLOBAL STYLES (injected once) ─────────────────────── */
+const GLOBAL_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0f0e0c;
+    --rust: #c0501a;
+    --rust-dk: #9a3c10;
+    --rust-glow: rgba(192,80,26,0.25);
+    --teal: #0e7c7b;
+    --green: #16a34a;
+    --red: #dc2626;
+    --amber: #d97706;
+    --blue: #2563eb;
+    --purple: #7c3aed;
+    --cream: #faf8f4;
+    --paper: #f3efe7;
+    --warm: #e8e0d2;
+    --muted: #8c7d6e;
+    --border: rgba(0,0,0,0.08);
+    --card-bg: rgba(255,255,255,0.85);
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+
+  .sa-card { animation: fadeUp 0.3s ease both; }
+  .sa-tab-btn { transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+  .sa-tab-btn:hover { transform: translateY(-1px); }
+  .sa-btn { transition: all 0.15s ease; }
+  .sa-btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.07); }
+  .sa-btn:active:not(:disabled) { transform: translateY(0px); }
+  .sa-row { transition: background 0.12s ease; }
+  .sa-row:hover { background: rgba(192,80,26,0.03) !important; }
+
+  .sa-stat-card {
+    position: relative; overflow: hidden;
+    background: var(--card-bg); border-radius: 16px;
+    border: 1px solid var(--border); box-shadow: var(--card-shadow);
+    padding: 18px 20px; cursor: default;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .sa-stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+  .sa-stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--accent, var(--rust)); border-radius: 16px 16px 0 0;
+  }
+
+  .sa-input {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid var(--warm); background: white;
+    font-family: 'Outfit', sans-serif; font-size: 0.88rem; color: var(--ink);
+    outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .sa-input:focus { border-color: var(--rust); box-shadow: 0 0 0 3px var(--rust-glow); }
+  .sa-input::placeholder { color: var(--muted); }
+
+  .sa-select {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid var(--warm); background: white;
+    font-family: 'Outfit', sans-serif; font-size: 0.88rem; color: var(--ink);
+    outline: none; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .sa-select:focus { border-color: var(--rust); }
+
+  .pill-filter {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 99px; font-size: 0.78rem; font-weight: 600;
+    font-family: 'Outfit', sans-serif; cursor: pointer; border: 1.5px solid var(--warm);
+    background: white; color: var(--muted); transition: all 0.15s ease; white-space: nowrap;
+  }
+  .pill-filter:hover { border-color: var(--rust); color: var(--rust); }
+  .pill-filter.active { background: var(--rust); border-color: var(--rust); color: white; box-shadow: 0 2px 8px var(--rust-glow); }
+  .pill-filter.active-danger { background: var(--red); border-color: var(--red); color: white; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 8px; border-radius: 99px; font-size: 0.65rem;
+    font-weight: 700; letter-spacing: 0.05em; font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+  }
+
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15,14,12,0.55); backdrop-filter: blur(8px);
+    animation: fadeUp 0.2s ease;
+  }
+  .modal-box {
+    background: white; border-radius: 20px; padding: 28px;
+    max-width: 420px; width: 90%; box-shadow: 0 32px 80px rgba(0,0,0,0.25);
+    animation: slideIn 0.25s ease;
+  }
+
+  .area-bar-wrap { height: 6px; border-radius: 99px; background: var(--warm); overflow: hidden; display: flex; }
+  .area-bar-seg { height: 100%; transition: flex 0.4s ease; }
+
+  @media (max-width: 640px) {
+    .sa-grid-kpi { grid-template-columns: repeat(2, 1fr) !important; }
+    .sa-grid-3 { grid-template-columns: 1fr !important; }
+    .sa-grid-2 { grid-template-columns: 1fr !important; }
+    .desktop-only { display: none !important; }
+  }
+`;
+
+/* ─── PALETTE TOKENS ──────────────────────────────────────── */
 const C = {
-  ink: '#1c1711', charcoal: '#3d3228', muted: '#7a6c5e',
-  rust: '#b5541c', rustDk: '#8c3e12', rustLt: 'rgba(181,84,28,0.08)',
-  cream: '#faf7f2', paper: '#f4efe7', warm: '#ede5d8',
-  divider: '#ddd5c7', teal: '#1d6a6a', tealLt: 'rgba(29,106,106,0.08)',
-  green: '#16a34a', greenLt: 'rgba(22,163,74,0.08)',
-  red: '#dc2626', redLt: 'rgba(220,38,38,0.08)',
-  amber: '#d97706', amberLt: 'rgba(217,119,6,0.08)',
-  blue: '#2563eb', blueLt: 'rgba(37,99,235,0.08)',
+  ink: '#0f0e0c', rust: '#c0501a', rustDk: '#9a3c10',
+  rustGlow: 'rgba(192,80,26,0.2)', cream: '#faf8f4',
+  paper: '#f3efe7', warm: '#e8e0d2', muted: '#8c7d6e',
+  border: 'rgba(0,0,0,0.08)', teal: '#0e7c7b',
+  green: '#16a34a', red: '#dc2626', amber: '#d97706',
+  blue: '#2563eb', purple: '#7c3aed',
 };
 
-// ── Tiny reusable primitives ──────────────────────────────
+const ROLE_COLORS = { tenant: C.blue, owner: C.teal, scout: C.rust, super_admin: C.purple };
+const STATUS_COLORS = { available: C.green, occupied: C.amber, flagged: C.red, deleted: C.muted };
+const REPORT_COLORS = { pending: C.amber, approved: C.green, rejected: C.red };
 
-function Card({ children, style }) {
+/* ─── PRIMITIVES ──────────────────────────────────────────── */
+
+function Card({ children, style, className = '' }) {
   return (
-    <div style={{
-      background: 'white', borderRadius: 14, border: `1px solid ${C.divider}`,
-      boxShadow: '0 2px 12px rgba(28,23,17,0.06)', ...style,
+    <div className={`sa-card ${className}`} style={{
+      background: 'rgba(255,255,255,0.9)', borderRadius: 16,
+      border: `1px solid ${C.border}`,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05)',
+      ...style,
     }}>
       {children}
     </div>
   );
 }
 
-function Badge({ label, color = C.muted, bg }) {
+function Badge({ label, color = C.muted }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      padding: '2px 9px', borderRadius: 99, fontSize: '0.68rem', fontWeight: 700,
-      letterSpacing: '0.04em', background: bg || `${color}18`, color,
-    }}>
+    <span className="badge" style={{ background: `${color}18`, color }}>
       {label}
     </span>
   );
 }
 
-function Stat({ label, value, sub, accent = C.rust, icon }) {
-  return (
-    <Card style={{ padding: '20px 22px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div>
-          <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.muted, marginBottom: 6 }}>
-            {label}
-          </p>
-          <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: C.ink, lineHeight: 1, marginBottom: sub ? 4 : 0 }}>
-            {value ?? '—'}
-          </p>
-          {sub && <p style={{ fontSize: '0.72rem', color: C.muted }}>{sub}</p>}
-        </div>
-        {icon && (
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: `${accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {icon}
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function Btn({ children, onClick, variant = 'ghost', size = 'sm', disabled, style }) {
-  const base = {
-    display: 'inline-flex', alignItems: 'center', gap: 5,
-    fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.55 : 1, border: 'none', borderRadius: 8, transition: 'all 0.15s',
-    fontSize: size === 'xs' ? '0.72rem' : '0.82rem',
-    padding: size === 'xs' ? '4px 10px' : size === 'sm' ? '7px 14px' : '10px 20px',
-    ...style,
-  };
-  const variants = {
-    primary: { background: C.rust, color: 'white', boxShadow: `0 3px 10px ${C.rust}40` },
+function Btn({ children, onClick, variant = 'ghost', size = 'sm', disabled, style, title }) {
+  const sz = size === 'xs' ? { padding: '5px 11px', fontSize: '0.72rem' }
+           : size === 'sm' ? { padding: '8px 16px', fontSize: '0.82rem' }
+           :                 { padding: '11px 22px', fontSize: '0.88rem' };
+  const vs = {
+    primary: { background: C.rust, color: 'white', boxShadow: `0 2px 8px ${C.rustGlow}` },
     danger:  { background: C.red,  color: 'white' },
-    ghost:   { background: 'transparent', color: C.charcoal },
-    outline: { background: 'transparent', border: `1.5px solid ${C.divider}`, color: C.charcoal },
     success: { background: C.green, color: 'white' },
+    ghost:   { background: 'transparent', color: C.muted, border: 'none' },
+    outline: { background: 'white', border: `1.5px solid ${C.warm}`, color: '#555' },
   };
   return (
-    <button onClick={onClick} disabled={disabled} style={{ ...base, ...variants[variant] }}>
+    <button title={title} onClick={onClick} disabled={disabled} className="sa-btn" style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      fontFamily: "'Outfit', sans-serif", fontWeight: 600,
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.5 : 1, border: 'none',
+      borderRadius: 10, ...sz, ...vs[variant], ...style,
+    }}>
       {children}
     </button>
   );
@@ -90,70 +180,75 @@ function Btn({ children, onClick, variant = 'ghost', size = 'sm', disabled, styl
 
 function Input({ value, onChange, placeholder, style }) {
   return (
-    <input
-      value={value} onChange={onChange} placeholder={placeholder}
-      style={{
-        padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${C.divider}`,
-        background: C.cream, fontSize: '0.85rem', fontFamily: "'DM Sans', sans-serif",
-        color: C.ink, outline: 'none', width: '100%', ...style,
-      }}
-      onFocus={e => e.target.style.borderColor = C.rust}
-      onBlur={e => e.target.style.borderColor = C.divider}
-    />
+    <input value={value} onChange={onChange} placeholder={placeholder}
+      className="sa-input" style={style} />
   );
 }
 
-function SectionTitle({ children }) {
+function Spinner({ size = 28 }) {
   return (
-    <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: C.ink, letterSpacing: '-0.01em', marginBottom: 16 }}>
-      {children}
-    </h2>
-  );
-}
-
-function EmptyState({ message }) {
-  return (
-    <div style={{ textAlign: 'center', padding: '40px 20px', color: C.muted, fontSize: '0.85rem' }}>
-      {message}
-    </div>
-  );
-}
-
-function Spinner() {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
       <div style={{
-        width: 28, height: 28, borderRadius: '50%',
+        width: size, height: size, borderRadius: '50%',
         border: `3px solid ${C.warm}`, borderTopColor: C.rust,
-        animation: 'spin 0.7s linear infinite',
+        animation: 'spin 0.65s linear infinite',
       }} />
     </div>
   );
 }
 
-// ── NAV TABS ──────────────────────────────────────────────
+function EmptyState({ message, icon }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '52px 20px', color: C.muted }}>
+      <div style={{ fontSize: '2.5rem', marginBottom: 12, opacity: 0.4 }}>{icon || '📭'}</div>
+      <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.88rem' }}>{message}</p>
+    </div>
+  );
+}
+
+function SectionTitle({ children }) {
+  return (
+    <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '1.1rem', fontWeight: 700, color: C.ink, marginBottom: 14, letterSpacing: '-0.01em' }}>
+      {children}
+    </h2>
+  );
+}
+
+/* ─── STAT CARD ───────────────────────────────────────────── */
+function Stat({ label, value, sub, accent = C.rust, icon }) {
+  return (
+    <div className="sa-stat-card" style={{ '--accent': accent }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.6rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, marginBottom: 8 }}>
+            {label}
+          </p>
+          <p style={{ fontFamily: "'Syne', sans-serif", fontSize: '2rem', fontWeight: 800, color: C.ink, lineHeight: 1 }}>
+            {value ?? '—'}
+          </p>
+          {sub && <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.72rem', color: C.muted, marginTop: 4 }}>{sub}</p>}
+        </div>
+        {icon && (
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {icon}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── TABS CONFIG ─────────────────────────────────────────── */
 const TABS = [
-  { key: 'dashboard', label: 'Dashboard', icon: (
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-  )},
-  { key: 'users', label: 'Users', icon: (
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-  )},
-  { key: 'properties', label: 'Properties', icon: (
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-  )},
-  { key: 'ads', label: 'Ads', icon: (
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
-  )},
-  { key: 'scouts', label: 'Scout Reports', icon: (
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
-  )},
-  { key: 'logs', label: 'Audit Logs', icon: (
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-  )},
+  { key: 'dashboard', label: 'Overview', emoji: '⚡' },
+  { key: 'users', label: 'Users', emoji: '👥' },
+  { key: 'properties', label: 'Listings', emoji: '🏠' },
+  { key: 'ads', label: 'Ads', emoji: '📢' },
+  { key: 'scouts', label: 'Scouts', emoji: '📸' },
+  { key: 'logs', label: 'Logs', emoji: '📋' },
 ];
 
-// ── DASHBOARD TAB ─────────────────────────────────────────
+/* ─── DASHBOARD TAB ───────────────────────────────────────── */
 function DashboardTab({ analytics, areaBreakdown }) {
   if (!analytics) return <Spinner />;
   const a = analytics;
@@ -163,64 +258,104 @@ function DashboardTab({ analytics, areaBreakdown }) {
     .sort((x, y) => y.total - x.total);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* KPI grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14 }}>
-        <Stat label="Total Users"      value={a.total_users}           sub={`${a.new_users_today} today`}       accent={C.rust} icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={C.rust} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>} />
-        <Stat label="Properties"       value={a.total_properties}      sub={`${a.new_properties_today} today`} accent={C.teal} icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={C.teal} strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>} />
-        <Stat label="Available"        value={a.available_properties}  accent={C.green} icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={C.green} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>} />
-        <Stat label="Occupied"         value={a.occupied_properties}   accent={C.amber} icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={C.amber} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>} />
-        <Stat label="Flagged"          value={a.flagged_properties}    accent={C.red}   icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={C.red} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m5-9v9m4-9v9m4-4l2 4"/></svg>} />
-        <Stat label="Suspended Users"  value={a.suspended_users}       accent={C.red}   icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={C.red} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>} />
-        <Stat label="Scout Reports"    value={a.total_scout_reports}   sub={`${a.pending_reports} pending`}    accent={C.blue} icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={C.blue} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" d="M21 21l-4.35-4.35"/></svg>} />
-        <Stat label="Active Ads"       value={a.active_ads}            accent={C.rust}  icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={C.rust} strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* KPI Grid */}
+      <div className="sa-grid-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <Stat label="Total Users"     value={a.total_users}          sub={`+${a.new_users_today} today`}       accent={C.rust}
+          icon={<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={C.rust} strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>} />
+        <Stat label="Properties"      value={a.total_properties}     sub={`+${a.new_properties_today} today`}  accent={C.teal}
+          icon={<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={C.teal} strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>} />
+        <Stat label="Scout Reports"   value={a.total_scout_reports}  sub={`${a.pending_reports} pending`}      accent={C.blue}
+          icon={<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={C.blue} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" d="M21 21l-4.35-4.35"/></svg>} />
+        <Stat label="Active Ads"      value={a.active_ads}           accent={C.purple}
+          icon={<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={C.purple} strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>} />
       </div>
 
-      {/* Growth row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+      {/* Status Row */}
+      <div className="sa-grid-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <Stat label="Available"       value={a.available_properties}  accent={C.green}
+          icon={<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={C.green} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>} />
+        <Stat label="Occupied"        value={a.occupied_properties}   accent={C.amber}
+          icon={<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={C.amber} strokeWidth="2"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" d="M12 8v4l3 3"/></svg>} />
+        <Stat label="Flagged"         value={a.flagged_properties}    accent={C.red}
+          icon={<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={C.red} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 21V8l9-5 9 5v13"/></svg>} />
+        <Stat label="Suspended Users" value={a.suspended_users}       accent={C.red}
+          icon={<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={C.red} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>} />
+      </div>
+
+      {/* Growth Strip */}
+      <div className="sa-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
         {[
-          { label: 'New listings today',      value: a.new_properties_today },
-          { label: 'New listings this week',   value: a.new_properties_week },
-          { label: 'New listings this month',  value: a.new_properties_month },
-        ].map(({ label, value }) => (
-          <Card key={label} style={{ padding: '18px 20px' }}>
-            <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: C.muted, marginBottom: 6 }}>{label}</p>
-            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.8rem', color: C.ink, lineHeight: 1 }}>{value ?? '—'}</p>
+          { label: 'New Today',    value: a.new_properties_today, color: C.green },
+          { label: 'This Week',    value: a.new_properties_week,  color: C.teal },
+          { label: 'This Month',   value: a.new_properties_month, color: C.rust },
+        ].map(({ label, value, color }) => (
+          <Card key={label} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+              </svg>
+            </div>
+            <div>
+              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.6rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.muted, marginBottom: 4 }}>
+                Listings · {label}
+              </p>
+              <p style={{ fontFamily: "'Syne', sans-serif", fontSize: '1.6rem', fontWeight: 800, color, lineHeight: 1 }}>{value ?? '—'}</p>
+            </div>
           </Card>
         ))}
       </div>
 
-      {/* Role breakdown + Area breakdown */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      {/* Breakdown Row */}
+      <div className="sa-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        {/* User breakdown */}
         <Card style={{ padding: '22px' }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.muted, marginBottom: 14 }}>User breakdown</p>
+          <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.6rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, marginBottom: 18 }}>
+            User Breakdown
+          </p>
           {[
-            { label: 'Tenants', value: a.total_tenants,  color: C.blue },
-            { label: 'Owners',  value: a.total_owners,   color: C.teal },
-            { label: 'Scouts',  value: a.total_scouts,   color: C.rust },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-                <span style={{ fontSize: '0.85rem', color: C.charcoal }}>{label}</span>
+            { label: 'Tenants', value: a.total_tenants, color: C.blue },
+            { label: 'Owners',  value: a.total_owners,  color: C.teal },
+            { label: 'Scouts',  value: a.total_scouts,  color: C.rust },
+          ].map(({ label, value, color }) => {
+            const total = (a.total_tenants || 0) + (a.total_owners || 0) + (a.total_scouts || 0);
+            const pct = total ? Math.round(((value || 0) / total) * 100) : 0;
+            return (
+              <div key={label} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                    <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.85rem', color: '#444' }}>{label}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.75rem', color: C.muted }}>{pct}%</span>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '0.95rem', color: C.ink }}>{value ?? '—'}</span>
+                  </div>
+                </div>
+                <div style={{ height: 6, borderRadius: 99, background: C.warm, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.6s ease' }} />
+                </div>
               </div>
-              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: C.ink }}>{value ?? '—'}</span>
-            </div>
-          ))}
+            );
+          })}
         </Card>
 
-        <Card style={{ padding: '22px', overflowY: 'auto', maxHeight: 240 }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.muted, marginBottom: 14 }}>Area breakdown</p>
+        {/* Area breakdown */}
+        <Card style={{ padding: '22px', overflowY: 'auto', maxHeight: 280 }}>
+          <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.6rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, marginBottom: 18 }}>
+            Area Breakdown
+          </p>
+          {topAreas.length === 0 && <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.82rem', color: C.muted }}>No area data</p>}
           {topAreas.map(({ area, available, occupied, flagged }) => (
-            <div key={area} style={{ marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                <span style={{ fontSize: '0.78rem', color: C.charcoal, fontWeight: 500 }}>{area}</span>
-                <span style={{ fontSize: '0.75rem', color: C.muted }}>{(available || 0) + (occupied || 0)} total</span>
+            <div key={area} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.82rem', color: '#444', fontWeight: 500 }}>{area}</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.7rem', color: C.muted }}>{(available||0)+(occupied||0)} total</span>
               </div>
-              <div style={{ height: 5, borderRadius: 99, background: C.warm, overflow: 'hidden', display: 'flex' }}>
-                <div style={{ height: '100%', background: C.green, flex: available || 0 }} />
-                <div style={{ height: '100%', background: C.amber, flex: occupied || 0 }} />
-                {flagged > 0 && <div style={{ height: '100%', background: C.red, flex: flagged }} />}
+              <div className="area-bar-wrap">
+                <div className="area-bar-seg" style={{ flex: available||0, background: C.green }} />
+                <div className="area-bar-seg" style={{ flex: occupied||0, background: C.amber }} />
+                {(flagged||0) > 0 && <div className="area-bar-seg" style={{ flex: flagged, background: C.red }} />}
               </div>
             </div>
           ))}
@@ -230,7 +365,7 @@ function DashboardTab({ analytics, areaBreakdown }) {
   );
 }
 
-// ── USERS TAB ─────────────────────────────────────────────
+/* ─── USERS TAB ───────────────────────────────────────────── */
 function UsersTab() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -258,62 +393,87 @@ function UsersTab() {
     } finally { setActionId(null); setConfirmModal(null); }
   };
 
-  const ROLE_COLORS = { tenant: C.blue, owner: C.teal, scout: C.rust, super_admin: '#7c3aed' };
-
   return (
     <div>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…" style={{ maxWidth: 240 }} />
-        {['', 'tenant', 'owner', 'scout'].map(r => (
-          <Btn key={r} variant={roleFilter === r ? 'primary' : 'outline'} size="sm" onClick={() => setRoleFilter(r)}>
-            {r || 'All roles'}
-          </Btn>
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 260 }}>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={C.muted} strokeWidth="2"
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…"
+            className="sa-input" style={{ paddingLeft: 34 }} />
+        </div>
+        {[
+          { val: '', label: 'All' },
+          { val: 'tenant', label: 'Tenants' },
+          { val: 'owner', label: 'Owners' },
+          { val: 'scout', label: 'Scouts' },
+        ].map(({ val, label }) => (
+          <button key={val} className={`pill-filter ${roleFilter === val ? 'active' : ''}`}
+            onClick={() => setRoleFilter(val)}>{label}</button>
         ))}
-        <Btn variant={suspFilter === 'true' ? 'danger' : 'outline'} size="sm" onClick={() => setSuspFilter(s => s === 'true' ? '' : 'true')}>
-          Suspended only
-        </Btn>
+        <button
+          className={`pill-filter ${suspFilter === 'true' ? 'active-danger' : ''}`}
+          onClick={() => setSuspFilter(s => s === 'true' ? '' : 'true')}
+          style={{ borderColor: suspFilter === 'true' ? C.red : undefined }}>
+          🚫 Suspended
+        </button>
       </div>
 
       {loading ? <Spinner /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {users.length === 0 && <EmptyState message="No users found" />}
-          {users.map(u => (
-            <Card key={u.id} style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: ROLE_COLORS[u.role] || C.muted, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', flexShrink: 0 }}>
-                {u.name?.charAt(0)?.toUpperCase() || '?'}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem', color: C.ink }}>{u.name}</span>
-                  <Badge label={u.role} color={ROLE_COLORS[u.role] || C.muted} />
-                  {u.suspended && <Badge label="Suspended" color={C.red} />}
+          {users.length === 0 && <EmptyState message="No users match your filters" icon="👤" />}
+          {users.map((u, i) => {
+            const roleColor = ROLE_COLORS[u.role] || C.muted;
+            return (
+              <Card key={u.id} className="sa-row" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, animationDelay: `${i * 0.04}s` }}>
+                {/* Avatar */}
+                <div style={{
+                  width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+                  background: `${roleColor}20`, border: `2px solid ${roleColor}40`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1rem', color: roleColor,
+                }}>
+                  {u.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
-                <p style={{ fontSize: '0.75rem', color: C.muted }}>
-                  {u.phone ? `+91 ${u.phone}` : 'No phone'} · Joined {new Date(u.created_at).toLocaleDateString('en-IN')}
-                </p>
-                {u.suspended && u.suspend_reason && (
-                  <p style={{ fontSize: '0.72rem', color: C.red, marginTop: 2 }}>Reason: {u.suspend_reason}</p>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {u.suspended ? (
-                  <Btn variant="success" size="xs" disabled={actionId === u.id}
-                    onClick={() => setConfirmModal({ type: 'reactivate', user: u })}>
-                    Reactivate
-                  </Btn>
-                ) : u.role !== 'super_admin' ? (
-                  <Btn variant="danger" size="xs" disabled={actionId === u.id}
-                    onClick={() => setConfirmModal({ type: 'suspend', user: u })}>
-                    Suspend
-                  </Btn>
-                ) : null}
-              </div>
-            </Card>
-          ))}
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '0.9rem', color: C.ink }}>{u.name}</span>
+                    <Badge label={u.role} color={roleColor} />
+                    {u.suspended && <Badge label="suspended" color={C.red} />}
+                  </div>
+                  <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.7rem', color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {u.phone ? `+91 ${u.phone}` : 'No phone'} · {new Date(u.created_at).toLocaleDateString('en-IN')}
+                  </p>
+                  {u.suspended && u.suspend_reason && (
+                    <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.7rem', color: C.red, marginTop: 2 }}>⚠️ {u.suspend_reason}</p>
+                  )}
+                </div>
+                {/* Action */}
+                <div style={{ flexShrink: 0 }}>
+                  {u.suspended ? (
+                    <Btn variant="success" size="xs" disabled={actionId === u.id}
+                      onClick={() => setConfirmModal({ type: 'reactivate', user: u })}>
+                      ✓ Reactivate
+                    </Btn>
+                  ) : u.role !== 'super_admin' ? (
+                    <Btn variant="danger" size="xs" disabled={actionId === u.id}
+                      onClick={() => setConfirmModal({ type: 'suspend', user: u })}>
+                      Suspend
+                    </Btn>
+                  ) : (
+                    <Badge label="admin" color={C.purple} />
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
-      {/* Confirm modal */}
       {confirmModal && (
         <ConfirmModal
           title={confirmModal.type === 'suspend' ? `Suspend ${confirmModal.user.name}?` : `Reactivate ${confirmModal.user.name}?`}
@@ -329,7 +489,7 @@ function UsersTab() {
   );
 }
 
-// ── PROPERTIES TAB ────────────────────────────────────────
+/* ─── PROPERTIES TAB ──────────────────────────────────────── */
 function PropertiesTab() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -350,102 +510,73 @@ function PropertiesTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleDelete = async (id) => {
-    setActionId(id);
-    try {
-      await adminAPI.deleteProperty(id);
-      setProperties(prev => prev.filter(p => p.id !== id));
-    } finally { setActionId(null); setConfirmModal(null); }
-  };
-
-  const handleFlag = async (id) => {
-    setActionId(id);
-    try {
-      await adminAPI.flagProperty(id, 'Flagged by admin');
-      setProperties(prev => prev.map(p => p.id === id ? { ...p, status: 'flagged' } : p));
-    } finally { setActionId(null); }
-  };
-
-  const handleUnflag = async (id) => {
-    setActionId(id);
-    try {
-      await adminAPI.updateProperty(id, { status: 'available' });
-      setProperties(prev => prev.map(p => p.id === id ? { ...p, status: 'available' } : p));
-    } finally { setActionId(null); }
-  };
-
-  const handleEdit = async (id, updates) => {
-    try {
-      await adminAPI.updateProperty(id, updates);
-      setProperties(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
-      setEditModal(null);
-    } catch { /* handled */ }
-  };
-
-  const handleSetAd = async (property) => {
-    try {
-      await adminAPI.createAd({ property_id: property.id, frequency: 'always' });
-      setAdMsg(`"${property.title}" is now the active ad popup!`);
-      setTimeout(() => setAdMsg(''), 4000);
-    } catch { /* handled */ }
-  };
-
-  const STATUS_COLOR = {
-    available: { color: C.green, label: 'Available' },
-    occupied:  { color: C.amber, label: 'Occupied' },
-    flagged:   { color: C.red,   label: 'Flagged' },
-    deleted:   { color: C.muted, label: 'Deleted' },
-  };
+  const handleDelete  = async (id) => { setActionId(id); try { await adminAPI.deleteProperty(id); setProperties(prev => prev.filter(p => p.id !== id)); } finally { setActionId(null); setConfirmModal(null); } };
+  const handleFlag    = async (id) => { setActionId(id); try { await adminAPI.flagProperty(id, 'Flagged by admin'); setProperties(prev => prev.map(p => p.id === id ? { ...p, status: 'flagged' } : p)); } finally { setActionId(null); } };
+  const handleUnflag  = async (id) => { setActionId(id); try { await adminAPI.updateProperty(id, { status: 'available' }); setProperties(prev => prev.map(p => p.id === id ? { ...p, status: 'available' } : p)); } finally { setActionId(null); } };
+  const handleEdit    = async (id, updates) => { try { await adminAPI.updateProperty(id, updates); setProperties(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p)); setEditModal(null); } catch {} };
+  const handleSetAd   = async (property) => { try { await adminAPI.createAd({ property_id: property.id, frequency: 'always' }); setAdMsg(`"${property.title}" is now the active ad!`); setTimeout(() => setAdMsg(''), 4000); } catch {} };
 
   return (
     <div>
       {adMsg && (
-        <div style={{ marginBottom: 14, padding: '10px 16px', borderRadius: 10, background: C.greenLt, border: `1px solid ${C.green}30`, color: C.green, fontSize: '0.85rem', fontWeight: 600 }}>
-          {adMsg}
+        <div style={{ marginBottom: 14, padding: '12px 16px', borderRadius: 12, background: `${C.green}10`, border: `1px solid ${C.green}30`, color: C.green, fontFamily: "'Outfit', sans-serif", fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+          🎉 {adMsg}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title…" style={{ maxWidth: 240 }} />
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 260 }}>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={C.muted} strokeWidth="2"
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title…"
+            className="sa-input" style={{ paddingLeft: 34 }} />
+        </div>
         {['', 'available', 'occupied', 'flagged', 'deleted'].map(s => (
-          <Btn key={s} variant={statusFilter === s ? 'primary' : 'outline'} size="sm" onClick={() => setStatusFilter(s)}>
-            {s || 'All status'}
-          </Btn>
+          <button key={s} className={`pill-filter ${statusFilter === s ? 'active' : ''}`}
+            onClick={() => setStatusFilter(s)}>
+            {s || 'All'}
+          </button>
         ))}
       </div>
 
       {loading ? <Spinner /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {properties.length === 0 && <EmptyState message="No properties found" />}
-          {properties.map(p => {
-            const sc = STATUS_COLOR[p.status] || { color: C.muted, label: p.status };
+          {properties.length === 0 && <EmptyState message="No properties found" icon="🏠" />}
+          {properties.map((p, i) => {
+            const sc = { color: STATUS_COLORS[p.status] || C.muted, label: p.status };
             return (
-              <Card key={p.id} style={{ padding: '14px 18px', display: 'flex', gap: 14, alignItems: 'center' }}>
-                {p.images?.[0] ? (
-                  <img src={p.images[0]} alt="" style={{ width: 60, height: 48, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
-                ) : (
-                  <div style={{ width: 60, height: 48, borderRadius: 8, background: C.paper, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke={C.sand} strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-                  </div>
-                )}
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.88rem', color: C.ink }}>{p.title}</span>
+              <Card key={p.id} className="sa-row" style={{ padding: '14px 16px', display: 'flex', gap: 14, alignItems: 'center', animationDelay: `${i * 0.035}s` }}>
+                {/* Thumbnail */}
+                <div style={{ width: 62, height: 50, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: C.paper }}>
+                  {p.images?.[0]
+                    ? <img src={p.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>🏠</div>
+                  }
+                </div>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '0.88rem', color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>{p.title}</span>
                     <Badge label={sc.label} color={sc.color} />
-                    {p.profiles?.suspended && <Badge label="Owner Suspended" color={C.red} />}
+                    {p.profiles?.suspended && <Badge label="owner-suspended" color={C.red} />}
                   </div>
-                  <p style={{ fontSize: '0.75rem', color: C.muted }}>
-                    {p.area} · ₹{Number(p.rent).toLocaleString('en-IN')}/mo · {p.type || 'No type'}
-                    {p.profiles?.name ? ` · by ${p.profiles.name}` : ''}
+                  <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.68rem', color: C.muted }}>
+                    {p.area} · ₹{Number(p.rent).toLocaleString('en-IN')}/mo
+                    {p.profiles?.name ? ` · ${p.profiles.name}` : ''}
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  <Btn variant="outline" size="xs" onClick={() => setEditModal(p)}>Edit</Btn>
-                  <Btn variant="outline" size="xs" onClick={() => handleSetAd(p)} title="Set as popup ad" style={{ color: C.rust }}>📢 Ad</Btn>
-                  {p.status === 'flagged' ? (
-                    <Btn variant="outline" size="xs" disabled={actionId === p.id} onClick={() => handleUnflag(p.id)} style={{ color: C.green }}>Unflag</Btn>
-                  ) : p.status !== 'deleted' ? (
-                    <Btn variant="outline" size="xs" disabled={actionId === p.id} onClick={() => handleFlag(p.id)} style={{ color: C.amber }}>Flag</Btn>
-                  ) : null}
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 }}>
+                  <Btn variant="outline" size="xs" onClick={() => setEditModal(p)}>✏️</Btn>
+                  <Btn variant="outline" size="xs" onClick={() => handleSetAd(p)} title="Set as popup ad" style={{ fontSize: '0.8rem' }}>📢</Btn>
+                  {p.status === 'flagged'
+                    ? <Btn variant="outline" size="xs" disabled={actionId === p.id} onClick={() => handleUnflag(p.id)} style={{ color: C.green }}>Unflag</Btn>
+                    : p.status !== 'deleted'
+                    ? <Btn variant="outline" size="xs" disabled={actionId === p.id} onClick={() => handleFlag(p.id)} style={{ color: C.amber }}>Flag</Btn>
+                    : null}
                   {p.status !== 'deleted' && (
                     <Btn variant="danger" size="xs" disabled={actionId === p.id}
                       onClick={() => setConfirmModal({ type: 'delete', property: p })}>
@@ -459,20 +590,12 @@ function PropertiesTab() {
         </div>
       )}
 
-      {editModal && (
-        <EditPropertyModal
-          property={editModal}
-          onClose={() => setEditModal(null)}
-          onSave={(updates) => handleEdit(editModal.id, updates)}
-        />
-      )}
-
+      {editModal && <EditPropertyModal property={editModal} onClose={() => setEditModal(null)} onSave={(updates) => handleEdit(editModal.id, updates)} />}
       {confirmModal && (
         <ConfirmModal
           title={`Delete "${confirmModal.property?.title}"?`}
-          desc="This will remove the listing from the platform. This action cannot be undone."
-          confirmLabel="Delete"
-          confirmVariant="danger"
+          desc="This will remove the listing permanently. This cannot be undone."
+          confirmLabel="Delete" confirmVariant="danger"
           onCancel={() => setConfirmModal(null)}
           onConfirm={() => handleDelete(confirmModal.property.id)}
         />
@@ -481,7 +604,7 @@ function PropertiesTab() {
   );
 }
 
-// ── ADS TAB ───────────────────────────────────────────────
+/* ─── ADS TAB ─────────────────────────────────────────────── */
 function AdsTab() {
   const [ads, setAds] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -507,43 +630,28 @@ function AdsTab() {
   const handleCreate = async () => {
     if (!selectedPropId) return;
     setCreating(true);
-    try {
-      await adminAPI.createAd({ property_id: selectedPropId, frequency });
-      await loadAds();
-      setSelectedPropId('');
-    } finally { setCreating(false); }
+    try { await adminAPI.createAd({ property_id: selectedPropId, frequency }); await loadAds(); setSelectedPropId(''); }
+    finally { setCreating(false); }
   };
 
-  const handleToggle = async (id) => {
-    await adminAPI.toggleAd(id);
-    await loadAds();
-  };
-
-  const handleDelete = async (id) => {
-    await adminAPI.deleteAd(id);
-    setAds(prev => prev.filter(a => a.id !== id));
-  };
+  const handleToggle = async (id) => { await adminAPI.toggleAd(id); await loadAds(); };
+  const handleDelete = async (id) => { await adminAPI.deleteAd(id); setAds(prev => prev.filter(a => a.id !== id)); };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Create ad */}
-      <Card style={{ padding: '22px' }}>
-        <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.1rem', color: C.ink, marginBottom: 14 }}>
-          Promote a property
-        </p>
-        <p style={{ fontSize: '0.8rem', color: C.muted, marginBottom: 16 }}>
+      {/* Create Ad Card */}
+      <Card style={{ padding: '24px', background: `linear-gradient(135deg, ${C.rust}08 0%, white 100%)`, borderColor: `${C.rust}20` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: '1.5rem' }}>📢</span>
+          <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1.05rem', color: C.ink }}>Promote a Property</h3>
+        </div>
+        <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.8rem', color: C.muted, marginBottom: 20 }}>
           The selected property will appear as a popup when users open the site. Only one ad is active at a time.
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <label style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>
-              Property
-            </label>
-            <select
-              value={selectedPropId}
-              onChange={e => setSelectedPropId(e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${C.divider}`, background: C.cream, fontSize: '0.85rem', fontFamily: "'DM Sans', sans-serif", color: C.ink, outline: 'none' }}
-            >
+          <div style={{ flex: '1 1 220px' }}>
+            <label style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.58rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>Property</label>
+            <select value={selectedPropId} onChange={e => setSelectedPropId(e.target.value)} className="sa-select">
               <option value="">Select a property…</option>
               {properties.map(p => (
                 <option key={p.id} value={p.id}>{p.title} — {p.area} (₹{Number(p.rent).toLocaleString('en-IN')})</option>
@@ -551,53 +659,43 @@ function AdsTab() {
             </select>
           </div>
           <div>
-            <label style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>
-              Frequency
-            </label>
-            <select
-              value={frequency}
-              onChange={e => setFrequency(e.target.value)}
-              style={{ padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${C.divider}`, background: C.cream, fontSize: '0.85rem', fontFamily: "'DM Sans', sans-serif", color: C.ink, outline: 'none' }}
-            >
+            <label style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.58rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>Frequency</label>
+            <select value={frequency} onChange={e => setFrequency(e.target.value)} className="sa-select" style={{ width: 'auto', minWidth: 160 }}>
               <option value="always">Every visit</option>
               <option value="once_per_session">Once per session</option>
               <option value="once_per_day">Once per day</option>
             </select>
           </div>
           <Btn variant="primary" size="sm" onClick={handleCreate} disabled={!selectedPropId || creating}>
-            {creating ? 'Creating…' : 'Set as Ad'}
+            {creating ? 'Creating…' : '📢 Set as Ad'}
           </Btn>
         </div>
       </Card>
 
-      {/* Existing ads */}
       <SectionTitle>All Advertisements</SectionTitle>
       {loading ? <Spinner /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {ads.length === 0 && <EmptyState message="No advertisements yet" />}
-          {ads.map(ad => (
-            <Card key={ad.id} style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-              {ad.properties?.images?.[0] ? (
-                <img src={ad.properties.images[0]} alt="" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 8 }} />
-              ) : (
-                <div style={{ width: 64, height: 48, borderRadius: 8, background: C.paper, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke={C.sand} strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          {ads.length === 0 && <EmptyState message="No advertisements yet" icon="📢" />}
+          {ads.map((ad, i) => (
+            <Card key={ad.id} className="sa-row" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, animationDelay: `${i * 0.04}s` }}>
+              <div style={{ width: 62, height: 50, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: C.paper }}>
+                {ad.properties?.images?.[0]
+                  ? <img src={ad.properties.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>🏠</div>
+                }
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '0.88rem', color: C.ink }}>{ad.properties?.title || '—'}</span>
+                  <Badge label={ad.active ? 'active' : 'inactive'} color={ad.active ? C.green : C.muted} />
                 </div>
-              )}
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                  <span style={{ fontWeight: 600, fontSize: '0.88rem', color: C.ink }}>{ad.properties?.title || '—'}</span>
-                  {ad.active
-                    ? <Badge label="Active" color={C.green} />
-                    : <Badge label="Inactive" color={C.muted} />}
-                </div>
-                <p style={{ fontSize: '0.75rem', color: C.muted }}>
+                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.68rem', color: C.muted }}>
                   {ad.properties?.area} · ₹{Number(ad.properties?.rent || 0).toLocaleString('en-IN')}/mo · {ad.frequency}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <Btn variant={ad.active ? 'outline' : 'success'} size="xs" onClick={() => handleToggle(ad.id)}>
-                  {ad.active ? 'Deactivate' : 'Activate'}
+                  {ad.active ? 'Pause' : 'Activate'}
                 </Btn>
                 <Btn variant="danger" size="xs" onClick={() => handleDelete(ad.id)}>Remove</Btn>
               </div>
@@ -609,7 +707,7 @@ function AdsTab() {
   );
 }
 
-// ── SCOUTS TAB ────────────────────────────────────────────
+/* ─── SCOUTS TAB ──────────────────────────────────────────── */
 function ScoutsTab() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -628,43 +726,48 @@ function ScoutsTab() {
 
   const handleAction = async (id, status) => {
     setActionId(id);
-    try {
-      await adminAPI.updateReport(id, status);
-      setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    } finally { setActionId(null); }
+    try { await adminAPI.updateReport(id, status); setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r)); }
+    finally { setActionId(null); }
   };
-
-  const STATUS_COLOR = { pending: C.amber, approved: C.green, rejected: C.red };
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        {['', 'pending', 'approved', 'rejected'].map(s => (
-          <Btn key={s} variant={statusFilter === s ? 'primary' : 'outline'} size="sm" onClick={() => setStatusFilter(s)}>
-            {s || 'All'}
-          </Btn>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+        {[
+          { val: '', label: 'All' },
+          { val: 'pending', label: '⏳ Pending' },
+          { val: 'approved', label: '✓ Approved' },
+          { val: 'rejected', label: '✗ Rejected' },
+        ].map(({ val, label }) => (
+          <button key={val} className={`pill-filter ${statusFilter === val ? 'active' : ''}`}
+            onClick={() => setStatusFilter(val)}>{label}</button>
         ))}
       </div>
 
       {loading ? <Spinner /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {reports.length === 0 && <EmptyState message="No reports found" />}
-          {reports.map(r => (
-            <Card key={r.id} style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-              <img src={r.image_url} alt="" style={{ width: 64, height: 52, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} onError={e => e.target.style.display = 'none'} />
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                  <span style={{ fontWeight: 600, fontSize: '0.88rem', color: C.ink }}>{r.profiles?.name || 'Unknown scout'}</span>
-                  <Badge label={r.status} color={STATUS_COLOR[r.status] || C.muted} />
+          {reports.length === 0 && <EmptyState message="No reports found" icon="📸" />}
+          {reports.map((r, i) => (
+            <Card key={r.id} className="sa-row" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, animationDelay: `${i * 0.04}s` }}>
+              <div style={{ width: 62, height: 50, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: C.paper }}>
+                {r.image_url
+                  ? <img src={r.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => e.target.style.display = 'none'} />
+                  : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '1.4rem' }}>📸</div>
+                }
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                  <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '0.88rem', color: C.ink }}>{r.profiles?.name || 'Unknown scout'}</span>
+                  <Badge label={r.status} color={REPORT_COLORS[r.status] || C.muted} />
                 </div>
-                <p style={{ fontSize: '0.75rem', color: C.muted }}>
+                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.68rem', color: C.muted }}>
                   {r.area} · {new Date(r.created_at).toLocaleDateString('en-IN')} · +{r.reward_points} pts
                 </p>
               </div>
               {r.status === 'pending' && (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <Btn variant="success" size="xs" disabled={actionId === r.id} onClick={() => handleAction(r.id, 'approved')}>Approve</Btn>
-                  <Btn variant="danger"  size="xs" disabled={actionId === r.id} onClick={() => handleAction(r.id, 'rejected')}>Reject</Btn>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <Btn variant="success" size="xs" disabled={actionId === r.id} onClick={() => handleAction(r.id, 'approved')}>✓</Btn>
+                  <Btn variant="danger" size="xs" disabled={actionId === r.id} onClick={() => handleAction(r.id, 'rejected')}>✗</Btn>
                 </div>
               )}
             </Card>
@@ -675,7 +778,20 @@ function ScoutsTab() {
   );
 }
 
-// ── LOGS TAB ──────────────────────────────────────────────
+/* ─── LOGS TAB ────────────────────────────────────────────── */
+const ACTION_META = {
+  delete_property:         { color: C.red,    emoji: '🗑️' },
+  flag_property:           { color: C.amber,  emoji: '🚩' },
+  suspend_user:            { color: C.red,    emoji: '🚫' },
+  reactivate_user:         { color: C.green,  emoji: '✅' },
+  create_ad:               { color: C.rust,   emoji: '📢' },
+  activate_ad:             { color: C.green,  emoji: '▶️' },
+  deactivate_ad:           { color: C.muted,  emoji: '⏸️' },
+  update_property:         { color: C.blue,   emoji: '✏️' },
+  approved_scout_report:   { color: C.green,  emoji: '📸' },
+  rejected_scout_report:   { color: C.red,    emoji: '❌' },
+};
+
 function LogsTab() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -684,52 +800,63 @@ function LogsTab() {
     adminAPI.getLogs({ limit: 100 }).then(({ data }) => setLogs(data.logs || [])).finally(() => setLoading(false));
   }, []);
 
-  const ACTION_COLOR = {
-    delete_property: C.red, flag_property: C.amber, suspend_user: C.red,
-    reactivate_user: C.green, create_ad: C.rust, activate_ad: C.green,
-    deactivate_ad: C.muted, update_property: C.blue, approved_scout_report: C.green,
-    rejected_scout_report: C.red,
-  };
-
   return (
     <div>
       {loading ? <Spinner /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {logs.length === 0 && <EmptyState message="No audit logs yet" />}
-          {logs.map(log => (
-            <Card key={log.id} style={{ padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: ACTION_COLOR[log.action] || C.muted, flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: C.ink, marginRight: 8 }}>{log.action}</span>
-                <span style={{ fontSize: '0.75rem', color: C.muted }}>by {log.profiles?.name || 'Admin'}</span>
-                {log.meta && Object.keys(log.meta).length > 0 && (
-                  <p style={{ fontSize: '0.72rem', color: C.muted, marginTop: 2 }}>
-                    {JSON.stringify(log.meta).slice(0, 80)}…
-                  </p>
-                )}
+          {logs.length === 0 && <EmptyState message="No audit logs yet" icon="📋" />}
+          {logs.map((log, i) => {
+            const meta = ACTION_META[log.action] || { color: C.muted, emoji: '·' };
+            return (
+              <div key={log.id} className="sa-card" style={{
+                padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
+                background: 'rgba(255,255,255,0.85)', borderRadius: 12,
+                border: `1px solid ${C.border}`,
+                animationDelay: `${i * 0.02}s`,
+              }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                  background: `${meta.color}12`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem',
+                }}>
+                  {meta.emoji}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.75rem', fontWeight: 500, color: meta.color }}>{log.action}</span>
+                    <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.75rem', color: C.muted }}>by {log.profiles?.name || 'Admin'}</span>
+                  </div>
+                  {log.meta && Object.keys(log.meta).length > 0 && (
+                    <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.65rem', color: C.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {JSON.stringify(log.meta).slice(0, 90)}
+                    </p>
+                  )}
+                </div>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.65rem', color: C.muted, flexShrink: 0 }}>
+                  {new Date(log.created_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
+                </span>
               </div>
-              <span style={{ fontSize: '0.72rem', color: C.muted, flexShrink: 0 }}>
-                {new Date(log.created_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
-              </span>
-            </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-// ── MODALS ────────────────────────────────────────────────
+/* ─── MODALS ──────────────────────────────────────────────── */
 function ConfirmModal({ title, desc, confirmLabel, confirmVariant, onCancel, onConfirm, withReason }) {
   const [reason, setReason] = useState('');
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(28,23,17,0.4)', backdropFilter: 'blur(4px)' }}>
-      <div style={{ background: 'white', borderRadius: 16, padding: '28px 28px 24px', maxWidth: 380, width: '90%', boxShadow: '0 24px 60px rgba(28,23,17,0.2)' }}>
-        <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.2rem', color: C.ink, marginBottom: 8 }}>{title}</h3>
-        <p style={{ fontSize: '0.85rem', color: C.muted, marginBottom: withReason ? 14 : 24 }}>{desc}</p>
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: C.ink, marginBottom: 8 }}>{title}</h3>
+        <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.85rem', color: C.muted, marginBottom: withReason ? 16 : 24 }}>{desc}</p>
         {withReason && (
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>Reason (optional)</label>
+          <div style={{ marginBottom: 22 }}>
+            <label style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.6rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>
+              Reason (optional)
+            </label>
             <Input value={reason} onChange={e => setReason(e.target.value)} placeholder="Spam, fake listing, etc." />
           </div>
         )}
@@ -743,40 +870,38 @@ function ConfirmModal({ title, desc, confirmLabel, confirmVariant, onCancel, onC
 }
 
 function EditPropertyModal({ property, onClose, onSave }) {
-  const [form, setForm] = useState({ title: property.title, rent: property.rent, status: property.status, type: property.type || '', area: property.area });
+  const [form, setForm] = useState({ title: property.title, rent: property.rent, status: property.status });
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
-
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(28,23,17,0.4)', backdropFilter: 'blur(4px)' }}>
-      <div style={{ background: 'white', borderRadius: 16, padding: '28px', maxWidth: 420, width: '90%', boxShadow: '0 24px 60px rgba(28,23,17,0.2)' }}>
-        <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.2rem', color: C.ink, marginBottom: 20 }}>Edit property</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {[
-            { label: 'Title', key: 'title', type: 'text' },
-            { label: 'Rent (₹)', key: 'rent', type: 'number' },
-          ].map(({ label, key, type }) => (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: C.ink, marginBottom: 20 }}>Edit Property</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {[{ label: 'Title', key: 'title', type: 'text' }, { label: 'Rent (₹)', key: 'rent', type: 'number' }].map(({ label, key }) => (
             <div key={key}>
-              <label style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>{label}</label>
-              <Input value={form[key]} onChange={e => update(key, e.target.value)} style={{}} />
+              <label style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.6rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>{label}</label>
+              <Input value={form[key]} onChange={e => update(key, e.target.value)} />
             </div>
           ))}
           <div>
-            <label style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>Status</label>
-            <select value={form.status} onChange={e => update('status', e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${C.divider}`, background: C.cream, fontSize: '0.85rem' }}>
+            <label style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.6rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 6 }}>Status</label>
+            <select value={form.status} onChange={e => update('status', e.target.value)} className="sa-select">
               {['available', 'occupied', 'flagged'].map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 22 }}>
           <Btn variant="outline" size="sm" onClick={onClose}>Cancel</Btn>
-          <Btn variant="primary" size="sm" onClick={() => onSave({ title: form.title, rent: parseInt(form.rent), status: form.status })}>Save changes</Btn>
+          <Btn variant="primary" size="sm" onClick={() => onSave({ title: form.title, rent: parseInt(form.rent), status: form.status })}>
+            Save changes
+          </Btn>
         </div>
       </div>
     </div>
   );
 }
 
-// ── MAIN COMPONENT ────────────────────────────────────────
+/* ─── MAIN COMPONENT ──────────────────────────────────────── */
 export default function SuperAdmin() {
   const navigate = useNavigate();
   const { profile, loading: authLoading } = useAuth();
@@ -785,9 +910,7 @@ export default function SuperAdmin() {
   const [areaBreakdown, setAreaBreakdown] = useState({});
 
   useEffect(() => {
-    if (!authLoading && profile?.role !== 'super_admin') {
-      navigate('/');
-    }
+    if (!authLoading && profile?.role !== 'super_admin') navigate('/');
   }, [profile, authLoading, navigate]);
 
   useEffect(() => {
@@ -802,7 +925,6 @@ export default function SuperAdmin() {
   if (authLoading) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}><Spinner /></div>;
   }
-
   if (profile?.role !== 'super_admin') return null;
 
   const TAB_CONTENT = {
@@ -814,54 +936,70 @@ export default function SuperAdmin() {
     logs:       <LogsTab />,
   };
 
-  return (
-    <div style={{ minHeight: 'calc(100vh - 4rem)', background: '#f6f3ee' }}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  const activeTabMeta = TABS.find(t => t.key === activeTab);
 
-      {/* Header */}
-      <div style={{ background: C.rust, color: 'white', padding: '0 0 0 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 24px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+  return (
+    <div style={{ minHeight: 'calc(100vh - 4rem)', background: '#f1ede6', fontFamily: "'Outfit', sans-serif" }}>
+      <style>{GLOBAL_CSS}</style>
+
+      {/* ── HEADER ── */}
+      <div style={{
+        background: `linear-gradient(135deg, ${C.rust} 0%, ${C.rustDk} 100%)`,
+        position: 'sticky', top: 0, zIndex: 100,
+        boxShadow: '0 4px 24px rgba(192,80,26,0.3)',
+      }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+          {/* Top bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0 0' }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 12,
+              background: 'rgba(255,255,255,0.18)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem',
+            }}>
+              🛡️
             </div>
-            <div>
-              <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.4rem', fontWeight: 400, color: 'white', letterSpacing: '-0.01em' }}>
+            <div style={{ flex: 1 }}>
+              <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1.1rem', color: 'white', letterSpacing: '-0.01em' }}>
                 Super Admin
               </h1>
-              <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.65)', marginTop: 1 }}>
-                NearbyRental · Full platform control
+              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.6rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                NearbyRental · Full Control
               </p>
+            </div>
+            <div style={{
+              background: 'rgba(255,255,255,0.15)', borderRadius: 8,
+              padding: '4px 10px', fontFamily: "'DM Mono', monospace", fontSize: '0.65rem',
+              color: 'rgba(255,255,255,0.85)',
+            }}>
+              {activeTabMeta?.emoji} {activeTabMeta?.label}
             </div>
           </div>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
-            {TABS.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '10px 16px', borderRadius: '8px 8px 0 0', border: 'none', cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: '0.82rem',
-                  background: activeTab === tab.key ? 'white' : 'transparent',
-                  color: activeTab === tab.key ? C.rust : 'rgba(255,255,255,0.75)',
-                  transition: 'all 0.15s', whiteSpace: 'nowrap',
-                }}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+          {/* Tab Strip */}
+          <div style={{ display: 'flex', gap: 2, overflowX: 'auto', paddingBottom: 0, marginTop: 12, scrollbarWidth: 'none' }}>
+            {TABS.map(tab => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} className="sa-tab-btn" style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '9px 14px', borderRadius: '10px 10px 0 0', border: 'none', cursor: 'pointer',
+                  fontFamily: "'Outfit', sans-serif", fontWeight: isActive ? 700 : 500, fontSize: '0.8rem',
+                  background: isActive ? 'white' : 'transparent',
+                  color: isActive ? C.rust : 'rgba(255,255,255,0.72)',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                  boxShadow: isActive ? '0 -4px 12px rgba(0,0,0,0.08)' : 'none',
+                }}>
+                  <span style={{ fontSize: '0.9rem' }}>{tab.emoji}</span>
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 24px' }}>
+      {/* ── CONTENT ── */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 48px' }}>
         {TAB_CONTENT[activeTab]}
       </div>
     </div>
